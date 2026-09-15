@@ -12,6 +12,8 @@ Esta é a **V1**: um protótipo de frontend completo, com dados mockados e
 arquitetura já preparada para receber um backend real no futuro (API,
 autenticação, banco de dados, upload de imagens).
 
+Projeto em constante evolução.
+
 ---
 
 ## Stack
