@@ -3,8 +3,8 @@
 > conectando quem aprende, ensina e compartilha tecnologia
 
 Protótipo funcional de front-end do **edkut**, uma rede social acadêmica e
-tecnológica inspirada na experiência social do antigo Orkut — com identidade
-visual, marca e funcionalidades **próprias e originais** — voltada para
+tecnológica inspirada na experiência social do antigo Orkut - com identidade
+visual, marca e funcionalidades **próprias e originais** - voltada para
 estudantes, professores, pesquisadores, egressos e profissionais de
 Computação e Tecnologia.
 
