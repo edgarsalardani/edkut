@@ -28,87 +28,91 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-edkut-bg sm:flex-row">
-      <section className="flex flex-1 flex-col justify-center gap-6 bg-edkut-blueDark px-6 py-10 text-white sm:px-12">
-        <Logo size="lg" />
-        <p className="max-w-sm text-lg italic text-edkut-bg/90">
-          conectando quem aprende, ensina e compartilha tecnologia
-        </p>
-        <p className="max-w-md text-sm text-edkut-bg/80">
-          Uma rede social para estudantes, professores, pesquisadores, egressos e
-          profissionais de Computação e Tecnologia. Encontre comunidades, faça
-          conexões e discuta desde arquitetura de software até por que seu código
-          funciona sem você saber por quê.
-        </p>
+    <div className="min-h-screen bg-edkut-bg px-4 py-8 sm:py-12">
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+        <Logo size="lg" withSlogan />
 
-        <ul className="flex flex-wrap gap-2 pt-2">
-          {HIGHLIGHT_COMMUNITIES.map((c) => (
-            <li
-              key={c.label}
-              className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold"
-            >
-              <span aria-hidden="true">{c.emoji}</span>
-              {c.label}
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="mt-6 grid w-full grid-cols-1 gap-4 sm:grid-cols-[1.3fr_1fr] sm:items-start">
+          {/* Área esquerda — boas-vindas */}
+          <div className="border border-edkut-border bg-edkut-card rounded-edkut p-5">
+            <h1 className="font-heading text-lg font-bold text-edkut-blue">Bem-vindo ao edkut!</h1>
+            <p className="mt-2 text-sm text-edkut-text">
+              O edkut conecta estudantes, professores, pesquisadores, egressos e
+              profissionais interessados em Computação e Tecnologia. Encontre
+              comunidades, participe de discussões e faça conexões com quem também
+              vive código, IHC, IA e um pouco de nostalgia.
+            </p>
 
-      <section className="flex flex-1 items-center justify-center px-6 py-10 sm:px-12">
-        <div className="edkut-card w-full max-w-sm p-6">
-          <h1 className="font-heading text-lg font-bold text-edkut-blue">Entrar no edkut</h1>
-          <p className="mb-5 mt-1 text-sm text-edkut-muted">
-            Ainda não recomendamos notas nem frequência aqui — só conhecimento,
-            comunidade e um pouco de nostalgia.
-          </p>
+            <p className="mt-4 text-xs font-bold uppercase tracking-wide text-edkut-muted">
+              comunidades em destaque
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {HIGHLIGHT_COMMUNITIES.map((c) => (
+                <li key={c.label} className="edkut-tag flex items-center gap-1">
+                  <span aria-hidden="true">{c.emoji}</span>
+                  {c.label}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <label className="flex flex-col gap-1 text-sm font-semibold text-edkut-text">
-              e-mail
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="edkut-input"
-                placeholder="voce@exemplo.com"
-              />
-            </label>
+          {/* Área direita — acesso */}
+          <div className="border border-edkut-border bg-edkut-card rounded-edkut p-5">
+            <h2 className="font-heading text-base font-bold text-edkut-blue">Acesse sua conta</h2>
+            <p className="mb-4 mt-1 text-xs text-edkut-muted">
+              Protótipo mockado: o botão &ldquo;entrar&rdquo; acessa a conta de
+              demonstração.
+            </p>
 
-            <label className="flex flex-col gap-1 text-sm font-semibold text-edkut-text">
-              senha
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="edkut-input"
-                placeholder="••••••••"
-              />
-            </label>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-sm font-semibold text-edkut-text">
+                e-mail
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="edkut-input"
+                  placeholder="voce@exemplo.com"
+                />
+              </label>
 
-            <button type="submit" className="edkut-btn-pink mt-2 w-full">
-              entrar
-            </button>
-          </form>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-edkut-text">
+                senha
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="edkut-input"
+                  placeholder="••••••••"
+                />
+              </label>
 
-          <div className="mt-4 border-t border-edkut-border pt-3 text-center text-sm">
-            <button
-              onClick={() => setShowSignupNote((s) => !s)}
-              className="edkut-link font-semibold"
-            >
-              criar conta
-            </button>
-            {showSignupNote && (
-              <p className="mt-2 text-xs text-edkut-muted">
-                O cadastro ainda não está disponível neste protótipo. Use o botão
-                "entrar" para explorar o edkut com a conta de demonstração de
-                Edgar Salardani.
-              </p>
-            )}
+              <button type="submit" className="edkut-btn-pink mt-1 self-start px-6">
+                entrar
+              </button>
+            </form>
+
+            <div className="mt-4 border-t border-edkut-border pt-3 text-sm">
+              <span className="text-edkut-muted">Ainda não tem conta? </span>
+              <button
+                onClick={() => setShowSignupNote((s) => !s)}
+                className="edkut-link font-bold"
+              >
+                criar conta
+              </button>
+              {showSignupNote && (
+                <p className="mt-2 text-xs text-edkut-muted">
+                  O cadastro ainda não está disponível neste protótipo. Use o botão
+                  &ldquo;entrar&rdquo; para explorar o edkut com a conta de
+                  demonstração de Edgar Salardani.
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
