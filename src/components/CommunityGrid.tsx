@@ -63,8 +63,8 @@ export function CommunityGrid({
   if (!title) return content;
 
   return (
-    <div className="edkut-card p-3">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="rounded-edkut border border-edkut-border bg-white p-3">
+      <div className="mb-2 flex items-center justify-between border-b border-edkut-border pb-1.5">
         <h3 className="font-heading text-sm font-bold text-edkut-blue">{title}</h3>
         {viewAllHref && (
           <Link href={viewAllHref} className="edkut-link text-xs font-semibold">

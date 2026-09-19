@@ -18,25 +18,25 @@ export default async function HomePage() {
 
   return (
     <AppShell>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_260px]">
-        <aside className="flex flex-col gap-4 lg:order-1">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[210px_1fr_250px]">
+        <aside className="flex flex-col gap-3 lg:order-1">
           <ProfileCard user={currentUser} />
         </aside>
 
-        <section className="flex flex-col gap-4 lg:order-2">
-          <div className="edkut-card p-4">
-            <h1 className="font-heading text-lg font-bold text-edkut-blue">
-              Olá, {currentUser.name.split(" ")[0]}!
+        <section className="flex flex-col gap-3 lg:order-2">
+          <div className="rounded-edkut border border-edkut-border bg-white px-3.5 py-2.5">
+            <h1 className="font-heading text-base font-bold text-edkut-blue">
+              Olá, {currentUser.name.split(" ")[0]}!{" "}
+              <span className="font-normal text-edkut-muted">
+                veja o que a galera do edkut está estudando e discutindo hoje.
+              </span>
             </h1>
-            <p className="text-sm text-edkut-muted">
-              Veja o que a galera do edkut está estudando, construindo e discutindo hoje.
-            </p>
           </div>
 
           <PostFeed initialPosts={posts} currentUser={currentUser} />
         </section>
 
-        <aside className="flex flex-col gap-4 lg:order-3">
+        <aside className="flex flex-col gap-3 lg:order-3">
           <FriendGrid friends={friends.slice(0, 6)} title="amigos" viewAllHref="/friends" columns={3} />
           <CommunityGrid
             communities={myCommunities.slice(0, 5)}

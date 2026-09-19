@@ -22,7 +22,7 @@ export function PostFeed({ initialPosts, currentUser, communityId, emptyMessage 
   const [posts, setPosts] = useState(initialPosts);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <CreatePostBox
         currentUser={currentUser}
         communityId={communityId}
@@ -30,7 +30,7 @@ export function PostFeed({ initialPosts, currentUser, communityId, emptyMessage 
       />
 
       {posts.length === 0 ? (
-        <div className="edkut-card p-6 text-center text-sm text-edkut-muted">
+        <div className="rounded-edkut border border-dashed border-edkut-border p-6 text-center text-sm text-edkut-muted">
           {emptyMessage ?? "Ainda não há publicações por aqui. Seja a primeira pessoa a compartilhar algo!"}
         </div>
       ) : (

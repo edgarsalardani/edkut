@@ -56,7 +56,7 @@ export function PostCard({ post, currentUser }: PostCardProps) {
   }
 
   return (
-    <article className="edkut-card p-3.5">
+    <article className="rounded-edkut border border-edkut-border bg-white p-3">
       <header className="flex items-start gap-2.5">
         <Link href={`/profile/${author.id}`}>
           <UserAvatar user={author} size="sm" />

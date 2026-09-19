@@ -28,7 +28,7 @@ export function CreatePostBox({ currentUser, communityId, onPostCreated }: Creat
   }
 
   return (
-    <div className="edkut-card p-3.5">
+    <div className="rounded-edkut border border-edkut-border bg-white p-3">
       <form onSubmit={handleSubmit} className="flex gap-2.5">
         <UserAvatar user={currentUser} size="sm" />
         <div className="flex-1">

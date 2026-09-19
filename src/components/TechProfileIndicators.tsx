@@ -9,6 +9,10 @@ const ROWS: { key: keyof TechProfileScore; label: string; color: string }[] = [
 /**
  * Indicadores sociais do perfil (ver seção 9 da spec). São avaliações
  * sociais simuladas, não métricas acadêmicas ou de desempenho técnico real.
+ *
+ * V1.1: apresentação compacta em "tabela de estatísticas" (três células com
+ * divisórias finas), no lugar das barras de progresso da versão anterior —
+ * mais próxima de um placar clássico de rede social dos anos 2000.
  */
 export function TechProfileIndicators({
   scores,
@@ -18,23 +22,18 @@ export function TechProfileIndicators({
   compact?: boolean;
 }) {
   return (
-    <div className={`flex flex-col ${compact ? "gap-1.5" : "gap-2.5"}`}>
+    <div className="flex divide-x divide-edkut-border rounded-edkut border border-edkut-border bg-edkut-blueSoft">
       {ROWS.map((row) => (
-        <div key={row.key} className="flex items-center gap-2">
-          <span
-            className={`font-heading font-bold text-edkut-text ${compact ? "w-16 text-[10px]" : "w-20 text-xs"}`}
+        <div key={row.key} className={`flex-1 text-center ${compact ? "py-1.5" : "py-2"}`}>
+          <p
+            className={`font-heading font-bold tracking-wide ${compact ? "text-[8px]" : "text-[10px]"}`}
+            style={{ color: row.color }}
           >
             {row.label}
-          </span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-edkut-blueSoft">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${scores[row.key]}%`, backgroundColor: row.color }}
-            />
-          </div>
-          <span className="w-9 text-right text-xs font-semibold text-edkut-muted">
+          </p>
+          <p className={`font-heading font-black leading-tight text-edkut-text ${compact ? "text-xs" : "text-base"}`}>
             {scores[row.key]}%
-          </span>
+          </p>
         </div>
       ))}
     </div>
