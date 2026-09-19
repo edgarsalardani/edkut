@@ -12,7 +12,7 @@ Esta é a **V1**: um protótipo de frontend completo, com dados mockados e
 arquitetura já preparada para receber um backend real no futuro (API,
 autenticação, banco de dados, upload de imagens).
 
-Projeto em constante evolução.
+Projeto está constante evolução.
 
 ---
 
@@ -54,17 +54,6 @@ npm run start   # roda o build de produção
 npm run lint    # lint com as regras do Next.js
 ```
 
-> **Nota sobre validação:** este projeto foi construído em um ambiente sem
-> acesso à internet, então não foi possível rodar `npm install` /
-> `next build` de verdade durante o desenvolvimento. Em compensação, todo o
-> código foi revisado manualmente (imports, exports, props, hooks) e todos
-> os arquivos `.ts`/`.tsx` foram validados sintaticamente com o parser
-> TypeScript+JSX do `esbuild` (via `tsx`), incluindo a **execução completa**
-> de todos os mocks e services (camada 100% livre de React/Next), que
-> rodaram sem nenhum erro. Ainda assim, rode `npm run build` como primeira
-> conferência ao abrir o projeto — é o teste definitivo.
-
----
 
 ## Estrutura do projeto
 
@@ -141,26 +130,11 @@ ao perfil dele, card de comunidade leva à página da comunidade, etc).
 Todo o conteúdo de demonstração vive em `src/mocks`, um arquivo por
 entidade:
 
-- `users.ts` — 16 usuários fictícios, incluindo o usuário de demonstração
-  **Edgar Salardani** (`DEMO_USER_ID`), professor e pesquisador de
-  Computação, Engenharia de Software, IHC e Ontologias.
-- `communities.ts` — 15 comunidades, misturando temas técnicos/acadêmicos
-  (Engenharia de Software, IHC, IA, Ontologias, Arquitetura...) com
-  comunidades descontraídas ("Meu código funciona, não sei por quê", "Só
-  mais um artigo e eu começo o TCC", "IHC não é só deixar bonito"...).
-- `posts.ts` + `comments.ts` — publicações do feed e de comunidades, com
-  curtidas e comentários. Inclui um exemplo do tipo `"projeto"` (vitrine de
-  projeto acadêmico), já modelado para o futuro descrito na seção 19 da
-  especificação.
-- `scraps.ts`, `testimonials.ts`, `notifications.ts`, `friendRequests.ts` —
-  recados de perfil, depoimentos, notificações internas e solicitações de
-  amizade pendentes.
-
 Nenhum dado pertence a pessoas reais.
 
 ---
 
-## Camada de services (`src/services`) — preparada para uma API real
+## Camada de services (`src/services`) - preparada para uma API real
 
 Os componentes **nunca** importam os mocks diretamente para buscar listas de
 dados — eles chamam funções de `src/services/*`, que hoje leem dos mocks
@@ -172,37 +146,12 @@ export async function getFeedPosts(): Promise<Post[]> {
   return simulateDelay(sortByDateDesc(posts));
 }
 
-// amanhã (API real) — mesma assinatura, os componentes não mudam:
+// amanhã (API real) - mesma assinatura, os componentes não mudam:
 export async function getFeedPosts(): Promise<Post[]> {
   const res = await fetch("/api/posts");
   return res.json();
 }
 ```
-
-Para plugar um backend real, a mudança é isolada em `src/services`:
-
-1. Trocar a implementação de cada função de service por uma chamada
-   `fetch`/SDK para a API real, mantendo a mesma assinatura (parâmetros e
-   tipo de retorno já usam os tipos de `src/types`).
-2. Implementar autenticação de verdade no lugar de `src/lib/session.ts`
-   (hoje só uma flag em `localStorage` para o botão "entrar"/"sair"
-   funcionar visualmente).
-3. Trocar os `avatarEmoji`/`emoji` de usuários e comunidades por upload real
-   de imagem (o componente `Avatar` já isola essa lógica — bastaria
-   adicionar uma prop de URL de imagem).
-4. As ações que hoje só atualizam estado local do React (curtir, comentar,
-   entrar/sair de comunidade, aceitar/recusar amizade, criar post/scrap/
-   depoimento/comunidade) já chamam uma função de `services` de mesmo nome
-   — no protótipo elas só simulam um delay e devolvem um objeto novo; com
-   uma API real, passam a persistir de verdade.
-
-Alguns tipos em `src/types/index.ts` (ex: `PostKind` com `"imagem"`,
-`"link"`, `"codigo"`, `"enquete"`, `"projeto"`, e a interface
-`ProjectDetails`) já modelam funcionalidades futuras descritas na
-especificação (seções 18 e 19), mesmo a V1 só implementando publicações de
-texto (e um exemplo estático do tipo `"projeto"`) na interface.
-
----
 
 ## Escopo desta V1
 
