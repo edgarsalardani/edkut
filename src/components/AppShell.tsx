@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 import { getNotifications } from "@/services/notificationService";
 import { Header } from "./Header";
 

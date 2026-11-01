@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { CommunitiesPageClient } from "@/components/CommunitiesPageClient";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 import { getAllCommunities } from "@/services/communityService";
 
 export default async function CommunitiesPage() {

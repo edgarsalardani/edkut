@@ -80,7 +80,11 @@ export function ProfileTestimonialsSection({
             <p className="py-3 text-sm text-edkut-muted">Nenhum depoimento por aqui ainda.</p>
           ) : (
             testimonials.slice(0, previewCount).map((testimonial) => (
-              <TestimonialCard key={testimonial.id} testimonial={testimonial} author={getUserById(testimonial.authorId)} />
+              <TestimonialCard
+                key={testimonial.id}
+                testimonial={testimonial}
+                author={testimonial.authorId === currentUser.id ? currentUser : getUserById(testimonial.authorId)}
+              />
             ))
           )}
         </div>

@@ -1,18 +1,13 @@
 import { User } from "@/types";
-import { users, getUserById as findUserById, DEMO_USER_ID } from "@/mocks/users";
+import { users, getUserById as findUserById } from "@/mocks/users";
 import { simulateDelay } from "./simulateDelay";
 
 /**
- * Camada de "service" para usuários. Hoje lê de mocks em memória; no futuro,
+ * Camada de "service" para usuários FICTÍCIOS (mocks). O usuário autenticado e os perfis
+ * reais (UUID) vêm de services/authService.ts (Supabase). Hoje esta camada lê de mocks em memória; no futuro,
  * cada função aqui deve virar uma chamada HTTP (ex: fetch('/api/users/:id'))
  * mantendo a mesma assinatura, para que os componentes não precisem mudar.
  */
-
-export async function getCurrentUser(): Promise<User> {
-  const user = findUserById(DEMO_USER_ID);
-  if (!user) throw new Error("Usuário de demonstração não encontrado");
-  return simulateDelay(user);
-}
 
 export async function getUserById(id: string): Promise<User | undefined> {
   return simulateDelay(findUserById(id));

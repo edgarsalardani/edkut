@@ -74,7 +74,11 @@ export function ProfileScrapsSection({
             <p className="py-3 text-sm text-edkut-muted">Nenhum scrap por aqui ainda.</p>
           ) : (
             scraps.slice(0, previewCount).map((scrap) => (
-              <ScrapCard key={scrap.id} scrap={scrap} author={getUserById(scrap.authorId)} />
+              <ScrapCard
+                key={scrap.id}
+                scrap={scrap}
+                author={scrap.authorId === currentUser.id ? currentUser : getUserById(scrap.authorId)}
+              />
             ))
           )}
         </div>

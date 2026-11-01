@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { ProfileScrapsSection } from "@/components/ProfileScrapsSection";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 import { getScraps } from "@/services/scrapService";
 
 export default async function ScrapsPage() {

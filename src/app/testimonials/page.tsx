@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { ProfileTestimonialsSection } from "@/components/ProfileTestimonialsSection";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 import { getTestimonials } from "@/services/testimonialService";
 
 export default async function TestimonialsPage() {

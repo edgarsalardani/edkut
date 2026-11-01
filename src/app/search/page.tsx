@@ -5,7 +5,7 @@ import { UserAvatar } from "@/components/Avatar";
 import { CommunityGrid } from "@/components/CommunityGrid";
 import { PostCard } from "@/components/PostCard";
 import { search } from "@/services/searchService";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 
 interface SearchPageProps {
   searchParams: { q?: string };

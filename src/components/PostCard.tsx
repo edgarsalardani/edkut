@@ -24,7 +24,9 @@ interface PostCardProps {
  * sincronizariam com o servidor (ver services/postService.ts).
  */
 export function PostCard({ post, currentUser }: PostCardProps) {
-  const author = getUserById(post.authorId);
+  // O usuário autenticado (UUID real) não existe nos mocks: resolve-o a partir da prop.
+  const resolveUser = (id: string): User | undefined => (id === currentUser.id ? currentUser : getUserById(id));
+  const author = resolveUser(post.authorId);
   const community = post.communityId ? getCommunityById(post.communityId) : undefined;
 
   const [liked, setLiked] = useState(post.likedByUserIds.includes(currentUser.id));
@@ -126,7 +128,7 @@ export function PostCard({ post, currentUser }: PostCardProps) {
       {showComments && (
         <div className="mt-2 border-t border-edkut-border pt-2">
           {comments.map((comment) => (
-            <Comment key={comment.id} comment={comment} author={getUserById(comment.authorId)} />
+            <Comment key={comment.id} comment={comment} author={resolveUser(comment.authorId)} />
           ))}
 
           <form onSubmit={handleAddComment} className="mt-2 flex items-center gap-2">

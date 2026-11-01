@@ -3,7 +3,8 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { FriendGrid } from "@/components/FriendGrid";
 import { CommunityGrid } from "@/components/CommunityGrid";
 import { PostFeed } from "@/components/PostFeed";
-import { getCurrentUser, getFriendsOf } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
+import { getFriendsOf } from "@/services/userService";
 import { getFeedPosts } from "@/services/postService";
 import { getMyCommunities, getCommunitiesToDiscover } from "@/services/communityService";
 

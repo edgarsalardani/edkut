@@ -3,7 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { CommunityHeader } from "@/components/CommunityHeader";
 import { PostFeed } from "@/components/PostFeed";
 import { FriendGrid } from "@/components/FriendGrid";
-import { getCurrentUser, getUsersByIds } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
+import { getUsersByIds } from "@/services/userService";
 import { getCommunityById } from "@/services/communityService";
 import { getPostsByCommunity } from "@/services/postService";
 

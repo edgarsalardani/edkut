@@ -6,7 +6,7 @@ import { User } from "@/types";
 import { Logo } from "./Logo";
 import { UserAvatar } from "./Avatar";
 import { SearchBar } from "./Search";
-import { logout } from "@/lib/session";
+import { signOut } from "@/lib/session";
 
 interface HeaderProps {
   currentUser: User;
@@ -33,9 +33,10 @@ export function Header({ currentUser, unreadCount = 0 }: HeaderProps) {
     { href: "/testimonials", label: "depoimentos" },
   ];
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await signOut();
     router.push("/login");
+    router.refresh();
   }
 
   function isActive(href: string, matchPrefix?: string) {

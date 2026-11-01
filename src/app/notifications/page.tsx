@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { NotificationList } from "@/components/NotificationList";
-import { getCurrentUser } from "@/services/userService";
+import { getCurrentUser } from "@/services/authService";
 import { getNotifications } from "@/services/notificationService";
 
 export default async function NotificationsPage() {
