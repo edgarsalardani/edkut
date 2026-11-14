@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Post, User } from "@/types";
 import { UserAvatar } from "./Avatar";
 import { Comment } from "./Comment";
+import { EmoticonPicker } from "./EmoticonPicker";
+import { useEmoticonInsertion } from "@/lib/useEmoticonInsertion";
 import { getUserById } from "@/mocks/users";
 import { getCommunityById } from "@/mocks/communities";
 import { getCommentsByIds } from "@/mocks/comments";
@@ -35,6 +37,8 @@ export function PostCard({ post, currentUser }: PostCardProps) {
   const [showComments, setShowComments] = useState(comments.length > 0);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Emoticons: inserção na posição do cursor do campo de comentário.
+  const emoticons = useEmoticonInsertion<HTMLInputElement>(commentText, setCommentText);
 
   if (!author) return null;
 
@@ -134,13 +138,18 @@ export function PostCard({ post, currentUser }: PostCardProps) {
           <form onSubmit={handleAddComment} className="mt-2 flex items-center gap-2">
             <UserAvatar user={currentUser} size="xs" />
             <input
+              ref={emoticons.ref}
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
+              onBlur={emoticons.rememberSelection}
+              onKeyUp={emoticons.rememberSelection}
+              onClick={emoticons.rememberSelection}
               placeholder="escreva um comentário..."
-              className="edkut-input py-1"
+              className="edkut-input min-w-0 py-1"
               disabled={submitting}
             />
+            <EmoticonPicker onSelect={emoticons.insert} disabled={submitting} />
             <button type="submit" className="edkut-btn-outline py-1" disabled={submitting || !commentText.trim()}>
               enviar
             </button>

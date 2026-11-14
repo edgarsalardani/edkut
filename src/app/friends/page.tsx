@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { FriendsPageClient } from "@/components/FriendsPageClient";
 import { getCurrentUser } from "@/services/authService";
-import { getFriendsOf, getPendingRequests } from "@/services/friendService";
+import { getFriendsOf, getPendingRequests } from "@/services/socialService";
 
 export default async function FriendsPage() {
   const currentUser = await getCurrentUser();

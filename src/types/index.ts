@@ -10,19 +10,24 @@
 
 export type UserType = "professor" | "estudante" | "egresso" | "profissional";
 
-/** Os três indicadores sociais de perfil do EdKut (ver seção 9 da spec). */
+/**
+ * Os três indicadores sociais de perfil do EdKut, na ordem de exibição: NERD · PARCEIRO · TECH.
+ * `nerd` é o antigo "GEEK" (só o rótulo/chave do frontend mudou; no banco a coluna continua
+ * `profile_scores.geek_base` — ver mapeamento em services/authService.ts).
+ */
 export interface TechProfileScore {
-  tech: number; // 0-100
+  nerd: number; // 0-100
   parceiro: number; // 0-100
-  geek: number; // 0-100
+  tech: number; // 0-100
 }
 
 export interface User {
   id: string;
   name: string;
   username: string;
-  avatarEmoji: string; // usado como "foto" leve no protótipo (sem assets externos)
+  avatarEmoji: string; // avatar padrão (emoji + cor) para quem não enviou foto
   avatarColor: string; // cor de fundo do avatar
+  avatarUrl?: string; // foto enviada (Supabase Storage, URL pública); ausente => avatar padrão
   userType: UserType;
   headline: string; // ex: "Professor | Pesquisador"
   bio: string;
@@ -33,6 +38,8 @@ export interface User {
   friendIds: string[];
   communityIds: string[];
   techProfile: TechProfileScore;
+  /** Quantos amigos contribuem para os indicadores (só perfis reais; ausente nos usuários fictícios). */
+  ratingsCount?: number;
   joinedAt: string; // ISO date
   online?: boolean;
 }

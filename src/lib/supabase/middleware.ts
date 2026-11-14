@@ -4,8 +4,14 @@ import { getSupabaseEnv } from "./env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-/** Rotas acessíveis sem login. Todo o resto exige sessão. */
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+/**
+ * Rotas acessíveis sem login. Todo o resto exige sessão.
+ * - /forgot-password: pedir o link de recuperação (usuário deslogado).
+ * - /auth/reset-password: tela de nova senha; é pública para que um link inválido/expirado mostre
+ *   a mensagem própria da página (ela só deixa trocar a senha se houver sessão válida).
+ *   Não está na lista de redirecionamento de "já logado": usuário com sessão pode abri-la.
+ */
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/callback", "/auth/reset-password"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

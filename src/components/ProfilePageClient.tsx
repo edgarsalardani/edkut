@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import Link from "next/link";
 import { Community, Post, Scrap, Testimonial, User } from "@/types";
 import { UserAvatar } from "./Avatar";
+import { ProfileAvatarEditor } from "./ProfileAvatarEditor";
 import { Tag } from "./Tag";
 import { TechProfileIndicators } from "./TechProfileIndicators";
 import { FriendGrid } from "./FriendGrid";
@@ -11,6 +13,11 @@ import { PostCard } from "./PostCard";
 import { ProfileScrapsSection } from "./ProfileScrapsSection";
 import { ProfileTestimonialsSection } from "./ProfileTestimonialsSection";
 import { AddFriendButton } from "./AddFriendButton";
+import { FriendshipButton } from "./FriendshipButton";
+import { FriendRatingPanel } from "./FriendRatingPanel";
+import { fetchProfileScores, type MyRating } from "@/lib/ratings";
+import { isUuid } from "@/lib/uuid";
+import type { FriendshipState } from "@/services/socialService";
 import { USER_TYPE_LABEL } from "@/lib/userType";
 
 type Tab = "perfil" | "recados" | "depoimentos" | "publicacoes";
@@ -23,9 +30,9 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 const TECH_LEGEND: { label: string; color: string; description: string }[] = [
-  { label: "TECH", color: "#1D4E89", description: "o quanto a pessoa é vista como ligada ao universo da tecnologia" },
+  { label: "NERD", color: "#D81B85", description: "a identificação da pessoa com a cultura de Computação e Tecnologia" },
   { label: "PARCEIRO", color: "#3FA66B", description: "o quanto a pessoa é vista como colaborativa e disposta a ajudar" },
-  { label: "GEEK", color: "#D81B85", description: "a identificação da pessoa com a cultura de Computação e Tecnologia" },
+  { label: "TECH", color: "#1D4E89", description: "o quanto a pessoa é vista como ligada ao universo da tecnologia" },
 ];
 
 interface ProfilePageClientProps {
@@ -33,6 +40,10 @@ interface ProfilePageClientProps {
   currentUser: User;
   isOwnProfile: boolean;
   isAlreadyFriend: boolean;
+  /** Relação REAL com o perfil (só para perfis com id UUID). */
+  friendship: FriendshipState;
+  /** Minha avaliação atual sobre este perfil (só quando somos amigos). */
+  myRating: MyRating | null;
   friends: User[];
   communities: Community[];
   posts: Post[];
@@ -45,6 +56,8 @@ export function ProfilePageClient({
   currentUser,
   isOwnProfile,
   isAlreadyFriend,
+  friendship,
+  myRating,
   friends,
   communities,
   posts,
@@ -53,6 +66,29 @@ export function ProfilePageClient({
 }: ProfilePageClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("perfil");
   const firstName = profileUser.name.split(" ")[0];
+
+  // Perfis reais (UUID) usam amizade e avaliações reais; os fictícios (u1, u2...) continuam simulados.
+  const isRealProfile = isUuid(profileUser.id);
+  const [friendshipState, setFriendshipState] = useState<FriendshipState>(friendship);
+  const [scores, setScores] = useState(profileUser.techProfile);
+  const [ratingsCount, setRatingsCount] = useState<number | undefined>(isRealProfile ? profileUser.ratingsCount ?? 0 : undefined);
+
+  // Rebusca os percentuais consolidados (média calculada pelo banco) sem recarregar a página.
+  const refreshScores = useCallback(async () => {
+    const snapshot = await fetchProfileScores(profileUser.id);
+    if (snapshot) {
+      setScores(snapshot.scores);
+      setRatingsCount(snapshot.ratingsCount);
+    }
+  }, [profileUser.id]);
+
+  const canRate = isRealProfile && !isOwnProfile && friendshipState.status === "friends";
+
+  function handleFriendshipChange(next: FriendshipState) {
+    setFriendshipState(next);
+    // Amizade desfeita/criada muda quais votos valem: atualiza as barras.
+    void refreshScores();
+  }
 
   const infoRows: { label: string; value: string }[] = [
     { label: "tipo", value: USER_TYPE_LABEL[profileUser.userType] },
@@ -71,7 +107,11 @@ export function ProfilePageClient({
       <aside className="flex flex-col gap-3 lg:order-1">
         <div className="rounded-edkut border border-edkut-border bg-white">
           <div className="flex flex-col items-center gap-1.5 p-3.5 text-center">
-            <UserAvatar user={profileUser} size="lg" showOnline />
+            {isOwnProfile ? (
+              <ProfileAvatarEditor user={profileUser} />
+            ) : (
+              <UserAvatar user={profileUser} size="lg" showOnline />
+            )}
             <p className="font-heading text-sm font-bold text-edkut-blue">{profileUser.name}</p>
             <p className="text-xs font-semibold text-edkut-pink">{USER_TYPE_LABEL[profileUser.userType]}</p>
 
@@ -86,8 +126,21 @@ export function ProfilePageClient({
               </div>
             </div>
 
-            {!isOwnProfile && !isAlreadyFriend && <AddFriendButton />}
-            {!isOwnProfile && isAlreadyFriend && (
+            {isOwnProfile && (
+              <Link href="/profile/edit" className="edkut-btn-outline w-full text-center">
+                editar perfil
+              </Link>
+            )}
+            {!isOwnProfile && isRealProfile && (
+              <FriendshipButton
+                currentUserId={currentUser.id}
+                profileId={profileUser.id}
+                initial={friendship}
+                onChange={handleFriendshipChange}
+              />
+            )}
+            {!isOwnProfile && !isRealProfile && !isAlreadyFriend && <AddFriendButton />}
+            {!isOwnProfile && !isRealProfile && isAlreadyFriend && (
               <p className="text-xs font-semibold text-edkut-green">vocês já são amigos</p>
             )}
           </div>
@@ -119,8 +172,18 @@ export function ProfilePageClient({
         <div className="rounded-edkut border border-edkut-border bg-white p-3.5">
           <h1 className="font-heading text-lg font-bold text-edkut-blue">{profileUser.name}</h1>
           <p className="mb-2 text-xs text-edkut-muted">{profileUser.headline}</p>
-          <TechProfileIndicators scores={profileUser.techProfile} />
+          <TechProfileIndicators scores={scores} ratingsCount={ratingsCount} />
         </div>
+
+        {canRate && (
+          <FriendRatingPanel
+            key={`${profileUser.id}-${myRating?.isCurrent ?? "none"}`}
+            ratedId={profileUser.id}
+            firstName={firstName}
+            initialRating={myRating}
+            onSaved={refreshScores}
+          />
+        )}
 
         <div className="rounded-edkut border border-edkut-border bg-white">
           <div className="flex border-b border-edkut-border text-sm font-heading font-bold">
@@ -258,6 +321,9 @@ export function ProfilePageClient({
               </li>
             ))}
           </ul>
+          <p className="mt-2 border-t border-edkut-border pt-2 text-[11px] text-edkut-muted">
+            Cada percentual é a média simples (todos os amigos com o mesmo peso) das notas de 0 a 100 dadas pelos amigos.
+          </p>
         </div>
       </aside>
     </div>

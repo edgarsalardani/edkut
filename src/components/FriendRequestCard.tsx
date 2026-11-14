@@ -14,16 +14,29 @@ interface FriendRequestCardProps {
 
 export function FriendRequestCard({ requestId, fromUser, onResolved }: FriendRequestCardProps) {
   const [loading, setLoading] = useState<"accept" | "decline" | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleAccept() {
     setLoading("accept");
-    await acceptFriendRequest(requestId);
+    setError(null);
+    const result = await acceptFriendRequest(requestId);
+    if (!result.ok) {
+      setError(result.error ?? "Não foi possível aceitar agora.");
+      setLoading(null);
+      return;
+    }
     onResolved(requestId, "accepted");
   }
 
   async function handleDecline() {
     setLoading("decline");
-    await declineFriendRequest(requestId);
+    setError(null);
+    const result = await declineFriendRequest(requestId);
+    if (!result.ok) {
+      setError(result.error ?? "Não foi possível recusar agora.");
+      setLoading(null);
+      return;
+    }
     onResolved(requestId, "declined");
   }
 
@@ -37,6 +50,11 @@ export function FriendRequestCard({ requestId, fromUser, onResolved }: FriendReq
           {fromUser.name}
         </Link>
         <p className="truncate text-xs text-edkut-muted">{fromUser.headline}</p>
+        {error && (
+          <p role="alert" className="mt-1 text-xs text-edkut-pinkDark">
+            {error}
+          </p>
+        )}
       </div>
       <div className="flex shrink-0 gap-1.5">
         <button onClick={handleAccept} disabled={loading !== null} className="edkut-btn py-1 text-xs">

@@ -104,7 +104,7 @@ edkut/
 | ------------------------ | ------------------------------------------------------- |
 | `/login`                  | Tela de entrada, com a identidade nostálgica do edkut   |
 | `/home`                   | Feed cronológico + coluna de perfil + amigos/comunidades |
-| `/profile/[id]`           | Perfil completo: bio, interesses, Tech·Parceiro·Geek, amigos, comunidades, publicações, scraps e depoimentos |
+| `/profile/[id]`           | Perfil completo: bio, interesses, Nerd·Parceiro·Tech, amigos, comunidades, publicações, scraps e depoimentos |
 | `/friends`                | Lista de amigos, busca e solicitações pendentes          |
 | `/communities`            | Diretório de comunidades: busca, categorias, abas (minhas/descobrir/populares), criar comunidade |
 | `/communities/[id]`       | Página de uma comunidade: descrição, membros, moderadores, publicações |
@@ -125,7 +125,7 @@ ao perfil dele, card de comunidade leva à página da comunidade, etc).
 - **`Logo`** — logotipo textual original do edkut.
 - **`Avatar`** (+ `UserAvatar`, `CommunityAvatar`) — "foto" leve baseada em emoji + cor, sem depender de imagens externas ou de terceiros.
 - **`ProfileCard`** — card compacto de perfil usado nas barras laterais.
-- **`TechProfileIndicators`** — os indicadores sociais TECH · PARCEIRO · GEEK.
+- **`TechProfileIndicators`** — os indicadores sociais NERD · PARCEIRO · TECH.
 - **`FriendGrid`** / **`FriendRequestCard`** / **`AddFriendButton`** — amigos e solicitações.
 - **`CommunityGrid`** / **`CommunityHeader`** — listagem e cabeçalho de comunidades.
 - **`PostFeed`** / **`PostCard`** / **`CreatePostBox`** / **`Comment`** — feed, publicações e comentários (curtir, comentar, publicar).
@@ -208,8 +208,8 @@ texto (e um exemplo estático do tipo `"projeto"`) na interface.
 ## Escopo desta V1
 
 Implementado: identidade visual nostálgica, login/cadastro reais (Supabase Auth), feed cronológico
-(sem algoritmo de recomendação), perfil completo com Tech · Parceiro ·
-Geek, amigos (com solicitações), comunidades (busca, categorias, criar,
+(sem algoritmo de recomendação), perfil completo com Nerd · Parceiro ·
+Tech, amigos (com solicitações), comunidades (busca, categorias, criar,
 entrar/sair, publicações dentro da comunidade), scraps, depoimentos, busca
 global e notificações internas — tudo navegável e com dados mockados
 suficientes para a rede social parecer "viva".

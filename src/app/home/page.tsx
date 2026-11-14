@@ -4,7 +4,7 @@ import { FriendGrid } from "@/components/FriendGrid";
 import { CommunityGrid } from "@/components/CommunityGrid";
 import { PostFeed } from "@/components/PostFeed";
 import { getCurrentUser } from "@/services/authService";
-import { getFriendsOf } from "@/services/userService";
+import { getFriendsOf } from "@/services/socialService";
 import { getFeedPosts } from "@/services/postService";
 import { getMyCommunities, getCommunitiesToDiscover } from "@/services/communityService";
 

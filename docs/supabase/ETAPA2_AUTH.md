@@ -94,7 +94,7 @@ npm run dev
 6. Clique em **sair:** volta ao `/login`. Tente abrir `http://localhost:3000/home` → é redirecionado ao `/login`.
 7. Entre de novo; teste também senha errada ("E-mail ou senha incorretos.") e e-mail já cadastrado.
 
-**O que você verá como usuário novo** (esperado, pois o resto ainda é mock): Home com o feed fictício; amigos e "minhas comunidades" vazios; perfil com seu nome, bio vazia, e TECH/PARCEIRO/GEEK em **0%** (ainda sem avaliações — decisão D4).
+**O que você verá como usuário novo** (esperado, pois o resto ainda é mock): Home com o feed fictício; amigos e "minhas comunidades" vazios; perfil com seu nome, bio vazia, e NERD/PARCEIRO/TECH em **0%** (ainda sem avaliações — decisão D4).
 
 ## 6. Limitações conhecidas desta etapa
 - **Username ocupado:** o trigger do banco evita falha de cadastro acrescentando um sufixo (`joao` → `joao_a1b2c`), mas o formulário **não avisa** antes, porque não existe consulta pública de disponibilidade (todas as tabelas exigem login). O username ainda não aparece em nenhuma tela. Solução futura: uma RPC de disponibilidade (precisaria de nova migração e de revisão de segurança).

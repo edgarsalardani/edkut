@@ -29,17 +29,28 @@ interface ProfileRow {
   interests: string[];
   avatar_emoji: string;
   avatar_color: string;
+  avatar_path: string | null;
   created_at: string;
 }
 
-interface ScoresRow {
-  tech_base: number | null;
-  parceiro_base: number | null;
-  geek_base: number | null;
+/** Linha devolvida por public.profile_social_scores() (migração 9): média das avaliações VÁLIDAS dos amigos. */
+interface SocialScoresRow {
+  nerd: number;
+  parceiro: number;
+  tech: number;
+  ratings_count: number;
+}
+
+/** Extras de um perfil real: amigos, indicadores, foto e presença. */
+interface UserExtras {
+  online: boolean;
+  avatarUrl?: string;
+  friendIds?: string[];
+  scores?: SocialScoresRow | null;
 }
 
 const PROFILE_COLUMNS =
-  "id, username, name, user_type, headline, bio, institution, course_or_area, location, interests, avatar_emoji, avatar_color, created_at";
+  "id, username, name, user_type, headline, bio, institution, course_or_area, location, interests, avatar_emoji, avatar_color, avatar_path, created_at";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -59,16 +70,17 @@ function memoPerRequest<A extends unknown[], R>(fn: (...args: A) => Promise<R>):
 
 /**
  * Converte uma linha de `profiles` no tipo `User` que o frontend já usa.
- * Campos que ainda não têm origem real (amigos, comunidades) ficam vazios até as
- * próximas etapas; TECH/PARCEIRO/GEEK usam o valor-base (D4 pendente) e 0 se não houver.
+ * friendIds vem de public.friendships (amizades reais). NERD/PARCEIRO/TECH vêm das avaliações dos amigos
+ * (migração 9; sem avaliações => 0 e ratingsCount 0). A coluna legada profile_scores.geek_base não é mais lida.
  */
-function toUser(row: ProfileRow, scores: ScoresRow | null, online: boolean): User {
+function toUser(row: ProfileRow, extras: UserExtras): User {
   return {
     id: row.id,
     name: row.name,
     username: row.username,
     avatarEmoji: row.avatar_emoji,
     avatarColor: row.avatar_color,
+    avatarUrl: extras.avatarUrl,
     userType: row.user_type,
     headline: row.headline,
     bio: row.bio,
@@ -76,16 +88,28 @@ function toUser(row: ProfileRow, scores: ScoresRow | null, online: boolean): Use
     courseOrArea: row.course_or_area ?? undefined,
     location: row.location ?? undefined,
     interests: row.interests ?? [],
-    friendIds: [],
+    friendIds: extras.friendIds ?? [],
     communityIds: [],
     techProfile: {
-      tech: scores?.tech_base ?? 0,
-      parceiro: scores?.parceiro_base ?? 0,
-      geek: scores?.geek_base ?? 0,
+      nerd: extras.scores?.nerd ?? 0,
+      parceiro: extras.scores?.parceiro ?? 0,
+      tech: extras.scores?.tech ?? 0,
     },
+    ratingsCount: extras.scores?.ratings_count ?? 0,
     joinedAt: row.created_at,
-    online,
+    online: extras.online,
   };
+}
+
+/**
+ * A foto fica no bucket público `avatars`; o perfil guarda só o CAMINHO (avatar_path). A URL é montada aqui
+ * com o domínio do PRÓPRIO projeto (getPublicUrl só concatena strings, sem rede) — nunca vem do banco.
+ * Defesa extra: só aceita caminhos dentro da pasta do dono do perfil (o banco já garante isso via CHECK).
+ */
+function buildAvatarUrl(supabase: SupabaseClient, row: ProfileRow): string | undefined {
+  const path = row.avatar_path;
+  if (!path || !path.startsWith(`${row.id}/`)) return undefined;
+  return supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
 }
 
 async function fetchProfileUser(
@@ -101,15 +125,46 @@ async function fetchProfileUser(
   const row = data as unknown as ProfileRow | null;
   if (!row) return undefined;
 
-  // Indicadores TECH/PARCEIRO/GEEK: linha opcional (só existe após seed/votos). Falha aqui não deve derrubar a página.
-  const { data: scoresData } = await supabase
-    .from("profile_scores")
-    .select("tech_base, parceiro_base, geek_base")
-    .eq("profile_id", id)
-    .maybeSingle();
-  const scores = (scoresData as unknown as ScoresRow | null) ?? null;
+  // Amigos reais e indicadores consolidados. Falha numa destas consultas (ex.: migração 9 ainda não aplicada)
+  // não derruba a página: cai em "sem amigos / 0%".
+  const [scoresRes, friendsRes] = await Promise.all([
+    supabase.rpc("profile_social_scores", { p_profile: id }),
+    supabase.rpc("friend_ids_of", { p_user: id }),
+  ]);
+  const scoreRows = (scoresRes.data as unknown as SocialScoresRow[] | null) ?? [];
+  const friendIds = normalizeIds(friendsRes.data);
 
-  return toUser(row, scores, online);
+  return toUser(row, {
+    online,
+    avatarUrl: buildAvatarUrl(supabase, row),
+    friendIds,
+    scores: scoreRows[0] ?? null,
+  });
+}
+
+/** `friend_ids_of` devolve `setof uuid`: aceita tanto ["id", ...] quanto [{ friend_ids_of: "id" }, ...]. */
+function normalizeIds(data: unknown): string[] {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((item) => (typeof item === "string" ? item : item && typeof item === "object" ? String(Object.values(item)[0] ?? "") : ""))
+    .filter((id) => isUuid(id));
+}
+
+/**
+ * Perfis REAIS por id, em lote (listas de amigos, solicitações). Versão leve: sem indicadores nem lista de amigos
+ * de cada um. IDs que não existirem são ignorados; a ordem pedida é preservada.
+ */
+export async function getProfileUsersByIds(ids: string[]): Promise<User[]> {
+  const valid = Array.from(new Set(ids.filter(isUuid)));
+  if (valid.length === 0) return [];
+  const supabase = createClient();
+  const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", valid);
+  if (error) throw new Error(`Não foi possível carregar os perfis (${error.message}).`);
+  const byId = new Map<string, User>();
+  for (const row of (data as unknown as ProfileRow[]) ?? []) {
+    byId.set(row.id, toUser(row, { online: false, avatarUrl: buildAvatarUrl(supabase, row) }));
+  }
+  return valid.map((id) => byId.get(id)).filter((u): u is User => Boolean(u));
 }
 
 /**

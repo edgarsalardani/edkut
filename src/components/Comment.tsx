@@ -2,6 +2,7 @@ import { Comment as CommentType, User } from "@/types";
 import { UserAvatar } from "./Avatar";
 import { formatRelativeTime } from "@/lib/format";
 import Link from "next/link";
+import { EmoticonText } from "./Emoticon";
 
 export function Comment({ comment, author }: { comment: CommentType; author?: User }) {
   if (!author) return null;
@@ -18,7 +19,9 @@ export function Comment({ comment, author }: { comment: CommentType; author?: Us
           </Link>
           <span className="text-[11px] text-edkut-faint">{formatRelativeTime(comment.createdAt)}</span>
         </div>
-        <p className="text-sm text-edkut-text">{comment.text}</p>
+        <p className="break-words text-sm text-edkut-text">
+          <EmoticonText text={comment.text} />
+        </p>
       </div>
     </div>
   );

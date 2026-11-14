@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { MIN_PASSWORD_LENGTH, USERNAME_RE, signIn, signUp } from "@/lib/session";
@@ -232,13 +233,20 @@ export default function LoginPage() {
                 )}
               </label>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="edkut-btn-pink mt-1 self-start px-6 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? (isSignup ? "criando conta..." : "entrando...") : isSignup ? "criar conta" : "entrar"}
-              </button>
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="edkut-btn-pink px-6 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (isSignup ? "criando conta..." : "entrando...") : isSignup ? "criar conta" : "entrar"}
+                </button>
+                {!isSignup && (
+                  <Link href="/forgot-password" className="edkut-link text-xs">
+                    Esqueceu sua senha?
+                  </Link>
+                )}
+              </div>
             </form>
 
             <div className="mt-4 border-t border-edkut-border pt-3 text-sm">
