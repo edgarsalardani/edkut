@@ -61,6 +61,50 @@ export async function getMyRating(ratedId: string): Promise<MyRating | null> {
   return { nerd: row.nerd, parceiro: row.parceiro, tech: row.tech, isCurrent: row.is_current };
 }
 
+/** `friend_ids_of` devolve `setof uuid`: aceita tanto ["id", ...] quanto [{ friend_ids_of: "id" }, ...]. */
+function idsFromRpc(data: unknown): string[] {
+  return (Array.isArray(data) ? data : [])
+    .map((item: unknown) => (typeof item === "string" ? item : item && typeof item === "object" ? String(Object.values(item)[0] ?? "") : ""))
+    .filter((id: string) => isUuid(id));
+}
+
+/**
+ * Relação do usuário logado com VÁRIAS pessoas de uma vez (lista de resultados da busca), com 2 consultas fixas
+ * (independente do número de resultados): amigos (friend_ids_of) e solicitações pendentes (RLS: só as minhas).
+ * Quem não aparece em nenhuma das duas fica "none". Qualquer falha lança erro: melhor avisar do que mostrar
+ * "adicionar amigo" para quem já é amigo.
+ */
+export async function getFriendshipStates(currentUserId: string, otherIds: string[]): Promise<Map<string, FriendshipState>> {
+  const states = new Map<string, FriendshipState>();
+  const wanted = otherIds.filter((id) => isUuid(id) && id !== currentUserId);
+  for (const id of wanted) states.set(id, { status: "none" });
+  if (wanted.length === 0 || !isUuid(currentUserId)) return states;
+
+  const supabase = createClient();
+  const [friendsRes, pendingRes] = await Promise.all([
+    supabase.rpc("friend_ids_of", { p_user: currentUserId }),
+    supabase
+      .from("friend_requests")
+      .select("id, sender_id, receiver_id")
+      .eq("status", "pending")
+      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`),
+  ]);
+  if (friendsRes.error) throw new Error(`Não foi possível carregar suas amizades (${friendsRes.error.message}).`);
+  if (pendingRes.error) throw new Error(`Não foi possível carregar suas solicitações (${pendingRes.error.message}).`);
+
+  for (const row of (pendingRes.data as unknown as { id: string; sender_id: string; receiver_id: string }[] | null) ?? []) {
+    const otherId = row.sender_id === currentUserId ? row.receiver_id : row.sender_id;
+    if (states.has(otherId)) {
+      states.set(otherId, { status: row.sender_id === currentUserId ? "request_sent" : "request_received", requestId: row.id });
+    }
+  }
+  // Amizade vence qualquer solicitação antiga/residual.
+  for (const id of idsFromRpc(friendsRes.data)) {
+    if (states.has(id)) states.set(id, { status: "friends" });
+  }
+  return states;
+}
+
 /**
  * Amigos de um usuário: REAIS (tabela friendships) para ids UUID; fictícios (mocks) para os demais.
  */
@@ -68,10 +112,7 @@ export async function getFriendsOf(userId: string): Promise<User[]> {
   if (!isUuid(userId)) return getMockFriendsOf(userId);
   const supabase = createClient();
   const { data } = await supabase.rpc("friend_ids_of", { p_user: userId });
-  const ids = (Array.isArray(data) ? data : [])
-    .map((item: unknown) => (typeof item === "string" ? item : item && typeof item === "object" ? String(Object.values(item)[0] ?? "") : ""))
-    .filter((id: string) => isUuid(id));
-  return getProfileUsersByIds(ids);
+  return getProfileUsersByIds(idsFromRpc(data));
 }
 
 /** Solicitações de amizade RECEBIDAS e pendentes: reais (friend_requests) para UUID; fictícias para os demais. */

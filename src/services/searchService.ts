@@ -1,5 +1,4 @@
 import { SearchResults } from "@/types";
-import { users } from "@/mocks/users";
 import { communities } from "@/mocks/communities";
 import { posts } from "@/mocks/posts";
 import { simulateDelay } from "./simulateDelay";
@@ -17,13 +16,9 @@ export async function search(query: string): Promise<SearchResults> {
     return simulateDelay({ people: [], communities: [], posts: [] });
   }
 
-  const people = users.filter(
-    (u) =>
-      normalize(u.name).includes(q) ||
-      normalize(u.username).includes(q) ||
-      normalize(u.bio).includes(q) ||
-      u.interests.some((i) => normalize(i).includes(q))
-  );
+  // Pessoas NÃO vêm mais daqui: a busca de pessoas é real (services/peopleSearchService.ts, tabela profiles).
+  // Mantido `people: []` só para não mudar o tipo SearchResults; usuários fictícios nunca entram nos resultados.
+  const people: SearchResults["people"] = [];
 
   const matchedCommunities = communities.filter(
     (c) => normalize(c.name).includes(q) || normalize(c.description).includes(q) || normalize(c.category).includes(q)

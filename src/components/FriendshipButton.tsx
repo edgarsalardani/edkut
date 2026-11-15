@@ -10,14 +10,16 @@ interface FriendshipButtonProps {
   profileId: string;
   initial: FriendshipState;
   /** Chamado quando o estado muda (o pai usa para mostrar/esconder o painel de avaliação). */
-  onChange: (state: FriendshipState) => void;
+  onChange?: (state: FriendshipState) => void;
+  /** Versão para listas (ex.: resultados da busca): alinhada à esquerda/direita e sem "desfazer amizade". */
+  compact?: boolean;
 }
 
 /**
  * Botão de amizade REAL (perfis com id UUID): adicionar, cancelar solicitação, aceitar/recusar e desfazer.
  * Toda a segurança está nas policies/RPCs do Supabase; aqui só orquestramos a interface.
  */
-export function FriendshipButton({ currentUserId, profileId, initial, onChange }: FriendshipButtonProps) {
+export function FriendshipButton({ currentUserId, profileId, initial, onChange, compact = false }: FriendshipButtonProps) {
   const router = useRouter();
   const [state, setState] = useState<FriendshipState>(initial);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export function FriendshipButton({ currentUserId, profileId, initial, onChange }
 
   function apply(next: FriendshipState) {
     setState(next);
-    onChange(next);
+    onChange?.(next);
     router.refresh(); // atualiza contagem de amigos, listas e notificações
   }
 
@@ -45,7 +47,7 @@ export function FriendshipButton({ currentUserId, profileId, initial, onChange }
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${compact ? "items-start sm:items-end" : "w-full items-center"}`}>
       {state.status === "none" && (
         <button
           type="button"
@@ -74,7 +76,7 @@ export function FriendshipButton({ currentUserId, profileId, initial, onChange }
       {state.status === "request_received" && (
         <>
           <p className="text-xs font-semibold text-edkut-pink">quer ser seu amigo</p>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               disabled={busy || !state.requestId}
@@ -98,7 +100,7 @@ export function FriendshipButton({ currentUserId, profileId, initial, onChange }
       {state.status === "friends" && (
         <>
           <p className="text-xs font-semibold text-edkut-green">vocês já são amigos</p>
-          {!confirmingRemoval ? (
+          {compact ? null : !confirmingRemoval ? (
             <button type="button" onClick={() => setConfirmingRemoval(true)} className="edkut-link text-[11px]">
               desfazer amizade
             </button>

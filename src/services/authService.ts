@@ -167,6 +167,65 @@ export async function getProfileUsersByIds(ids: string[]): Promise<User[]> {
   return valid.map((id) => byId.get(id)).filter((u): u is User => Boolean(u));
 }
 
+/** Colunas lidas pela busca de pessoas: só o que a lista exibe (nome, username, foto, tipo, frase). */
+const SEARCH_COLUMNS =
+  "id, username, name, user_type, headline, institution, avatar_emoji, avatar_color, avatar_path, created_at";
+
+type SearchRow = Pick<
+  ProfileRow,
+  "id" | "username" | "name" | "user_type" | "headline" | "institution" | "avatar_emoji" | "avatar_color" | "avatar_path" | "created_at"
+>;
+
+/**
+ * Busca de pessoas REAIS em public.profiles (a RLS permite leitura a usuários autenticados; `anon` não lê nada).
+ * Combina: (a) nome contendo TODAS as palavras, (b) username contendo o texto, (c) username exato.
+ * Os padrões chegam já escapados (lib/peopleSearch.ts) e são passados como valor de filtro, nunca dentro de .or().
+ * O próprio usuário logado é excluído. Falha de consulta => lança erro (a página mostra mensagem, não "nada encontrado").
+ */
+export async function searchProfilesByText(opts: {
+  namePatterns: string[];
+  usernamePattern: string | null;
+  usernameExact: string | null;
+  excludeId: string;
+  limit: number;
+}): Promise<User[]> {
+  const supabase = createClient();
+
+  let nameQuery = supabase.from("profiles").select(SEARCH_COLUMNS).neq("id", opts.excludeId);
+  for (const pattern of opts.namePatterns) nameQuery = nameQuery.ilike("name", pattern);
+  const queries: PromiseLike<{ data: unknown; error: { message: string } | null }>[] = [
+    nameQuery.order("name").limit(opts.limit),
+  ];
+  if (opts.usernamePattern) {
+    queries.push(
+      supabase
+        .from("profiles")
+        .select(SEARCH_COLUMNS)
+        .neq("id", opts.excludeId)
+        .ilike("username", opts.usernamePattern)
+        .order("username")
+        .limit(opts.limit)
+    );
+  }
+  if (opts.usernameExact) {
+    queries.push(
+      supabase.from("profiles").select(SEARCH_COLUMNS).neq("id", opts.excludeId).eq("username", opts.usernameExact).limit(1)
+    );
+  }
+
+  const results = await Promise.all(queries);
+  const byId = new Map<string, User>();
+  for (const result of results) {
+    if (result.error) throw new Error(`Não foi possível buscar pessoas (${result.error.message}).`);
+    for (const r of (result.data as SearchRow[] | null) ?? []) {
+      if (byId.has(r.id)) continue;
+      const row: ProfileRow = { ...r, bio: "", course_or_area: null, location: null, interests: [] };
+      byId.set(r.id, toUser(row, { online: false, avatarUrl: buildAvatarUrl(supabase, row) }));
+    }
+  }
+  return Array.from(byId.values());
+}
+
 /**
  * Usuário autenticado + seu perfil. Sem sessão válida, redireciona para /login
  * (o middleware já barra antes; isto é a segunda camada de defesa).
