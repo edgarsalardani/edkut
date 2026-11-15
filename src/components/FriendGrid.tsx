@@ -7,6 +7,8 @@ interface FriendGridProps {
   title?: string;
   viewAllHref?: string;
   emptyMessage?: string;
+  /** Link de ação mostrado junto da mensagem de lista vazia (ex.: "buscar pessoas"). */
+  emptyAction?: { href: string; label: string };
   columns?: 2 | 3 | 4;
 }
 
@@ -15,14 +17,15 @@ export function FriendGrid({
   title,
   viewAllHref,
   emptyMessage = "Nenhum amigo por aqui ainda.",
+  emptyAction,
   columns = 3,
 }: FriendGridProps) {
   const colsClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[columns];
 
   return (
-    <div className="edkut-card p-3">
+    <div className="rounded-edkut border border-edkut-border bg-white p-3">
       {title && (
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between border-b border-edkut-border pb-1.5">
           <h3 className="font-heading text-sm font-bold text-edkut-blue">{title}</h3>
           {viewAllHref && (
             <Link href={viewAllHref} className="edkut-link text-xs font-semibold">
@@ -33,7 +36,17 @@ export function FriendGrid({
       )}
 
       {friends.length === 0 ? (
-        <p className="text-sm text-edkut-muted">{emptyMessage}</p>
+        <p className="text-sm text-edkut-muted">
+          {emptyMessage}
+          {emptyAction && (
+            <>
+              {" "}
+              <Link href={emptyAction.href} className="edkut-link font-semibold">
+                {emptyAction.label}
+              </Link>
+            </>
+          )}
+        </p>
       ) : (
         <div className={`grid ${colsClass} gap-2`}>
           {friends.map((friend) => (

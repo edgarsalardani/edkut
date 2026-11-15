@@ -5,8 +5,7 @@
 // ---------------------------------------------------------------------------
 import { createClient } from "@/lib/supabase/server";
 import { getProfileUsersByIds } from "@/services/authService";
-import { getFriendsOf as getMockFriendsOf } from "@/services/userService";
-import { getPendingRequests as getMockPendingRequests, type PendingRequestWithUser } from "@/services/friendService";
+import type { PendingRequestWithUser } from "@/services/friendService";
 import { isUuid } from "@/lib/uuid";
 import type { MyRating } from "@/lib/ratings";
 import type { User } from "@/types";
@@ -106,18 +105,18 @@ export async function getFriendshipStates(currentUserId: string, otherIds: strin
 }
 
 /**
- * Amigos de um usuário: REAIS (tabela friendships) para ids UUID; fictícios (mocks) para os demais.
+ * Amigos de um usuário: REAIS (tabela friendships); ids que não são UUID => lista vazia (não há mais usuários fictícios).
  */
 export async function getFriendsOf(userId: string): Promise<User[]> {
-  if (!isUuid(userId)) return getMockFriendsOf(userId);
+  if (!isUuid(userId)) return [];
   const supabase = createClient();
   const { data } = await supabase.rpc("friend_ids_of", { p_user: userId });
   return getProfileUsersByIds(idsFromRpc(data));
 }
 
-/** Solicitações de amizade RECEBIDAS e pendentes: reais (friend_requests) para UUID; fictícias para os demais. */
+/** Solicitações de amizade RECEBIDAS e pendentes (friend_requests). */
 export async function getPendingRequests(userId: string): Promise<PendingRequestWithUser[]> {
-  if (!isUuid(userId)) return getMockPendingRequests(userId);
+  if (!isUuid(userId)) return [];
   const supabase = createClient();
   const { data } = await supabase
     .from("friend_requests")

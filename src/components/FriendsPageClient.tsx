@@ -67,7 +67,15 @@ export function FriendsPageClient({ initialFriends, initialRequests }: FriendsPa
           meus amigos ({filteredFriends.length})
         </h2>
 
-        {filteredFriends.length === 0 ? (
+        {friends.length === 0 ? (
+          <p className="text-sm text-edkut-muted">
+            Você ainda não tem amigos.{" "}
+            <Link href="/search" className="edkut-link font-semibold">
+              Busque pessoas
+            </Link>{" "}
+            e envie solicitações de amizade.
+          </p>
+        ) : filteredFriends.length === 0 ? (
           <p className="text-sm text-edkut-muted">Nenhum amigo encontrado.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -77,7 +85,7 @@ export function FriendsPageClient({ initialFriends, initialRequests }: FriendsPa
                 href={`/profile/${friend.id}`}
                 className="flex flex-col items-center gap-1.5 rounded-edkut border border-edkut-border p-3 text-center hover:border-edkut-pink hover:bg-edkut-blueSoft"
               >
-                <UserAvatar user={friend} size="md" showOnline />
+                <UserAvatar user={friend} size="md" />
                 <span className="line-clamp-1 text-sm font-bold text-edkut-blue">{friend.name}</span>
                 <span className="line-clamp-1 text-xs text-edkut-muted">{friend.headline}</span>
               </Link>

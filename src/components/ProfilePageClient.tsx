@@ -2,31 +2,29 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Community, Post, Scrap, Testimonial, User } from "@/types";
+import { User } from "@/types";
 import { UserAvatar } from "./Avatar";
 import { ProfileAvatarEditor } from "./ProfileAvatarEditor";
 import { Tag } from "./Tag";
 import { TechProfileIndicators } from "./TechProfileIndicators";
 import { FriendGrid } from "./FriendGrid";
-import { CommunityGrid } from "./CommunityGrid";
-import { PostCard } from "./PostCard";
 import { ProfileScrapsSection } from "./ProfileScrapsSection";
 import { ProfileTestimonialsSection } from "./ProfileTestimonialsSection";
-import { AddFriendButton } from "./AddFriendButton";
 import { FriendshipButton } from "./FriendshipButton";
 import { FriendRatingPanel } from "./FriendRatingPanel";
 import { fetchProfileScores, type MyRating } from "@/lib/ratings";
-import { isUuid } from "@/lib/uuid";
 import type { FriendshipState } from "@/services/socialService";
+import type { ScrapsData } from "@/services/scrapService";
+import type { TestimonialsData } from "@/services/testimonialService";
 import { USER_TYPE_LABEL } from "@/lib/userType";
 
-type Tab = "perfil" | "recados" | "depoimentos" | "publicacoes";
+// A aba "publicações" volta quando as publicações forem integradas ao Supabase.
+type Tab = "perfil" | "recados" | "depoimentos";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "perfil", label: "perfil" },
   { id: "recados", label: "recados" },
   { id: "depoimentos", label: "depoimentos" },
-  { id: "publicacoes", label: "publicações" },
 ];
 
 const TECH_LEGEND: { label: string; color: string; description: string }[] = [
@@ -39,39 +37,31 @@ interface ProfilePageClientProps {
   profileUser: User;
   currentUser: User;
   isOwnProfile: boolean;
-  isAlreadyFriend: boolean;
-  /** Relação REAL com o perfil (só para perfis com id UUID). */
+  /** Relação REAL com o perfil (amigos, solicitação enviada/recebida ou nenhuma). */
   friendship: FriendshipState;
   /** Minha avaliação atual sobre este perfil (só quando somos amigos). */
   myRating: MyRating | null;
   friends: User[];
-  communities: Community[];
-  posts: Post[];
-  scraps: Scrap[];
-  testimonials: Testimonial[];
+  scrapsData: ScrapsData;
+  testimonialsData: TestimonialsData;
 }
 
 export function ProfilePageClient({
   profileUser,
   currentUser,
   isOwnProfile,
-  isAlreadyFriend,
   friendship,
   myRating,
   friends,
-  communities,
-  posts,
-  scraps,
-  testimonials,
+  scrapsData,
+  testimonialsData,
 }: ProfilePageClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("perfil");
   const firstName = profileUser.name.split(" ")[0];
 
-  // Perfis reais (UUID) usam amizade e avaliações reais; os fictícios (u1, u2...) continuam simulados.
-  const isRealProfile = isUuid(profileUser.id);
   const [friendshipState, setFriendshipState] = useState<FriendshipState>(friendship);
   const [scores, setScores] = useState(profileUser.techProfile);
-  const [ratingsCount, setRatingsCount] = useState<number | undefined>(isRealProfile ? profileUser.ratingsCount ?? 0 : undefined);
+  const [ratingsCount, setRatingsCount] = useState<number | undefined>(profileUser.ratingsCount ?? 0);
 
   // Rebusca os percentuais consolidados (média calculada pelo banco) sem recarregar a página.
   const refreshScores = useCallback(async () => {
@@ -82,7 +72,14 @@ export function ProfilePageClient({
     }
   }, [profileUser.id]);
 
-  const canRate = isRealProfile && !isOwnProfile && friendshipState.status === "friends";
+  const canRate = !isOwnProfile && friendshipState.status === "friends";
+
+  // Depoimentos aguardando aprovação (só o dono do perfil enxerga): destaca a aba para ele não perder nenhum.
+  const [pendingTestimonials, setPendingTestimonials] = useState(
+    isOwnProfile ? testimonialsData.testimonials.filter((t) => t.status === "pending").length : 0
+  );
+  const tabLabel = (t: { id: Tab; label: string }) =>
+    t.id === "depoimentos" && isOwnProfile && pendingTestimonials > 0 ? `${t.label} (${pendingTestimonials})` : t.label;
 
   function handleFriendshipChange(next: FriendshipState) {
     setFriendshipState(next);
@@ -110,7 +107,7 @@ export function ProfilePageClient({
             {isOwnProfile ? (
               <ProfileAvatarEditor user={profileUser} />
             ) : (
-              <UserAvatar user={profileUser} size="lg" showOnline />
+              <UserAvatar user={profileUser} size="lg" />
             )}
             <p className="font-heading text-sm font-bold text-edkut-blue">{profileUser.name}</p>
             <p className="text-xs font-semibold text-edkut-pink">{USER_TYPE_LABEL[profileUser.userType]}</p>
@@ -120,10 +117,6 @@ export function ProfilePageClient({
                 <p className="font-heading text-sm font-bold text-edkut-blue">{profileUser.friendIds.length}</p>
                 amigos
               </div>
-              <div className="flex-1 py-1">
-                <p className="font-heading text-sm font-bold text-edkut-blue">{profileUser.communityIds.length}</p>
-                comunidades
-              </div>
             </div>
 
             {isOwnProfile && (
@@ -131,7 +124,7 @@ export function ProfilePageClient({
                 editar perfil
               </Link>
             )}
-            {!isOwnProfile && isRealProfile && (
+            {!isOwnProfile && (
               <FriendshipButton
                 currentUserId={currentUser.id}
                 profileId={profileUser.id}
@@ -139,14 +132,10 @@ export function ProfilePageClient({
                 onChange={handleFriendshipChange}
               />
             )}
-            {!isOwnProfile && !isRealProfile && !isAlreadyFriend && <AddFriendButton />}
-            {!isOwnProfile && !isRealProfile && isAlreadyFriend && (
-              <p className="text-xs font-semibold text-edkut-green">vocês já são amigos</p>
-            )}
           </div>
 
           <nav className="flex flex-col divide-y divide-edkut-border border-t border-edkut-border text-sm font-heading font-bold">
-            {TABS.filter((t) => t.id !== "publicacoes").map((t) => (
+            {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
@@ -154,14 +143,11 @@ export function ProfilePageClient({
                   activeTab === t.id ? "bg-edkut-blueSoft text-edkut-pink" : "edkut-link"
                 }`}
               >
-                {t.label}
+                {tabLabel(t)}
               </button>
             ))}
             <a href="#amigos-section" className="edkut-link px-3.5 py-2 text-left">
               amigos
-            </a>
-            <a href="#comunidades-section" className="edkut-link px-3.5 py-2 text-left">
-              comunidades
             </a>
           </nav>
         </div>
@@ -197,7 +183,7 @@ export function ProfilePageClient({
                     : "text-edkut-muted hover:text-edkut-blue"
                 }`}
               >
-                {t.label}
+                {tabLabel(t)}
               </button>
             ))}
           </div>
@@ -254,9 +240,11 @@ export function ProfilePageClient({
               <ProfileScrapsSection
                 profileOwner={profileUser}
                 currentUser={currentUser}
-                initialScraps={scraps}
+                initialScraps={scrapsData.scraps}
+                authors={scrapsData.authors}
                 isOwnProfile={isOwnProfile}
-                previewCount={scraps.length}
+                friendshipStatus={friendshipState.status}
+                loadError={scrapsData.error}
               />
             )}
 
@@ -264,24 +252,13 @@ export function ProfilePageClient({
               <ProfileTestimonialsSection
                 profileOwner={profileUser}
                 currentUser={currentUser}
-                initialTestimonials={testimonials}
+                initialTestimonials={testimonialsData.testimonials}
+                authors={testimonialsData.authors}
                 isOwnProfile={isOwnProfile}
-                previewCount={testimonials.length}
+                loadError={testimonialsData.error}
+                onPendingChange={setPendingTestimonials}
               />
             )}
-
-            {activeTab === "publicacoes" &&
-              (posts.length === 0 ? (
-                <p className="py-4 text-center text-sm text-edkut-muted">
-                  {firstName} ainda não publicou nada por aqui.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {posts.map((post) => (
-                    <PostCard key={post.id} post={post} currentUser={currentUser} />
-                  ))}
-                </div>
-              ))}
           </div>
         </div>
       </section>
@@ -294,16 +271,8 @@ export function ProfilePageClient({
             title="amigos"
             viewAllHref={isOwnProfile ? "/friends" : undefined}
             columns={3}
-          />
-        </div>
-
-        <div id="comunidades-section">
-          <CommunityGrid
-            communities={communities}
-            title="comunidades"
-            viewAllHref="/communities"
-            variant="list"
-            emptyMessage="Ainda não entrou em nenhuma comunidade."
+            emptyMessage={isOwnProfile ? "Você ainda não tem amigos." : `${firstName} ainda não tem amigos.`}
+            emptyAction={isOwnProfile ? { href: "/search", label: "buscar pessoas" } : undefined}
           />
         </div>
 

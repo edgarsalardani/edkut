@@ -1,21 +1,17 @@
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ProfileCard } from "@/components/ProfileCard";
 import { FriendGrid } from "@/components/FriendGrid";
-import { CommunityGrid } from "@/components/CommunityGrid";
-import { PostFeed } from "@/components/PostFeed";
 import { getCurrentUser } from "@/services/authService";
 import { getFriendsOf } from "@/services/socialService";
-import { getFeedPosts } from "@/services/postService";
-import { getMyCommunities, getCommunitiesToDiscover } from "@/services/communityService";
 
+/**
+ * Home. Só mostra dados REAIS: perfil, amigos (Supabase). O feed de publicações e as comunidades ainda não
+ * foram integrados, então aparecem como aviso/estado vazio (nunca como posts ou comunidades fictícios).
+ */
 export default async function HomePage() {
   const currentUser = await getCurrentUser();
-  const [posts, friends, myCommunities, discoverCommunities] = await Promise.all([
-    getFeedPosts(),
-    getFriendsOf(currentUser.id),
-    getMyCommunities(currentUser.id),
-    getCommunitiesToDiscover(currentUser.id, 4),
-  ]);
+  const friends = await getFriendsOf(currentUser.id);
 
   return (
     <AppShell>
@@ -28,29 +24,40 @@ export default async function HomePage() {
           <div className="rounded-edkut border border-edkut-border bg-white px-3.5 py-2.5">
             <h1 className="font-heading text-base font-bold text-edkut-blue">
               Olá, {currentUser.name.split(" ")[0]}!{" "}
-              <span className="font-normal text-edkut-muted">
-                veja o que a galera do edkut está estudando e discutindo hoje.
-              </span>
+              <span className="font-normal text-edkut-muted">que bom ter você no edkut.</span>
             </h1>
           </div>
 
-          <PostFeed initialPosts={posts} currentUser={currentUser} />
+          <div className="edkut-card">
+            <div className="edkut-card-title">novidades</div>
+            <div className="p-4 text-sm text-edkut-muted">
+              <p>As publicações ainda não estão disponíveis nesta versão do edkut.</p>
+              <ul className="mt-3 flex flex-col gap-1.5">
+                <li>
+                  <Link href="/search" className="edkut-link font-semibold">Encontre pessoas</Link> e envie solicitações de amizade.
+                </li>
+                <li>
+                  <Link href="/scraps" className="edkut-link font-semibold">Veja seus scraps</Link> e deixe recados no perfil dos seus amigos.
+                </li>
+                <li>
+                  <Link href="/testimonials" className="edkut-link font-semibold">Veja seus depoimentos</Link> e aprove os que quiser mostrar.
+                </li>
+                <li>
+                  <Link href="/profile/edit" className="edkut-link font-semibold">Complete seu perfil</Link>.
+                </li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         <aside className="flex flex-col gap-3 lg:order-3">
-          <FriendGrid friends={friends.slice(0, 6)} title="amigos" viewAllHref="/friends" columns={3} />
-          <CommunityGrid
-            communities={myCommunities.slice(0, 5)}
-            title="minhas comunidades"
-            viewAllHref="/communities"
-            variant="list"
-            emptyMessage="Você ainda não entrou em nenhuma comunidade."
-          />
-          <CommunityGrid
-            communities={discoverCommunities}
-            title="sugestões de comunidades"
-            viewAllHref="/communities"
-            variant="list"
+          <FriendGrid
+            friends={friends.slice(0, 6)}
+            title="amigos"
+            viewAllHref="/friends"
+            columns={3}
+            emptyMessage="Você ainda não tem amigos."
+            emptyAction={{ href: "/search", label: "buscar pessoas" }}
           />
         </aside>
       </div>

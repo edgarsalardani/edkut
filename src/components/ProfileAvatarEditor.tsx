@@ -70,7 +70,7 @@ export function ProfileAvatarEditor({ user }: { user: User }) {
       {previewUrl ? (
         <Avatar emoji={user.avatarEmoji} color={user.avatarColor} imageUrl={previewUrl} size="lg" />
       ) : (
-        <UserAvatar user={user} size="lg" showOnline />
+        <UserAvatar user={user} size="lg" />
       )}
 
       <input

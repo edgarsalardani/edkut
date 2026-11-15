@@ -126,8 +126,12 @@ export interface Testimonial {
   authorId: string;
   message: string;
   createdAt: string;
-  approved: boolean; // na V1 mockada, todos os exibidos já estão aprovados
+  approved: boolean; // true somente quando status === "approved"
+  /** Estado real no banco (public.testimonials.status). Ausente só em dados antigos. */
+  status?: TestimonialStatus;
 }
+
+export type TestimonialStatus = "pending" | "approved" | "rejected";
 
 export type NotificationKind =
   | "friend_accept"

@@ -6,13 +6,13 @@
 // pode ir para o bundle do navegador.
 //
 // Etapa 2: o usuário logado e perfis com id UUID vêm do Supabase (tabela profiles).
-// Os demais dados (amigos, comunidades, posts, scraps...) seguem mockados.
+// Amizades, avaliações, scraps e depoimentos também são reais; posts e comunidades ainda não foram integrados
+// (a interface mostra estados vazios, nunca dados fictícios).
 // ---------------------------------------------------------------------------
 import * as React from "react";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { getUserById as getMockUserById } from "@/services/userService";
 import type { User, UserType } from "@/types";
 
 /** Linha da tabela public.profiles (colunas lidas pelo app). */
@@ -97,7 +97,8 @@ function toUser(row: ProfileRow, extras: UserExtras): User {
     },
     ratingsCount: extras.scores?.ratings_count ?? 0,
     joinedAt: row.created_at,
-    online: extras.online,
+    // Não existe presença real (online/offline) no banco: nunca mostramos o indicador verde.
+    online: false,
   };
 }
 
@@ -252,13 +253,12 @@ export const getCurrentUser = memoPerRequest(async (): Promise<User> => {
 });
 
 /**
- * Perfil por id para a página /profile/[id]:
- *  - id em formato UUID  => usuário real (tabela profiles);
- *  - qualquer outro id   => usuário fictício dos mocks (u1, u2, ...).
+ * Perfil por id para a página /profile/[id]. Só existem perfis REAIS (id UUID, tabela profiles);
+ * qualquer outro id (inclusive os antigos "u1", "u2"...) => undefined (a página mostra "não encontrado").
  */
 export async function getProfileUserById(id: string): Promise<User | undefined> {
   if (!isUuid(id)) {
-    return getMockUserById(id);
+    return undefined;
   }
   const supabase = createClient();
   return fetchProfileUser(supabase, id, false);

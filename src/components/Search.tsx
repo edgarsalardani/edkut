@@ -9,11 +9,11 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-/** Busca global de pessoas, comunidades e publicações (ver seção 16 da spec). */
+/** Busca de pessoas (ver seção 16 da spec). Comunidades e publicações entram quando forem integradas. */
 export function SearchBar({
   initialQuery = "",
   size = "compact",
-  placeholder = "buscar pessoas, comunidades...",
+  placeholder = "buscar pessoas...",
 }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
