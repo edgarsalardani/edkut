@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { User } from "@/types";
+import { Scrap, Testimonial, User } from "@/types";
 import { UserAvatar } from "./Avatar";
 import { ProfileAvatarEditor } from "./ProfileAvatarEditor";
 import { Tag } from "./Tag";
@@ -10,6 +10,7 @@ import { TechProfileIndicators } from "./TechProfileIndicators";
 import { FriendGrid } from "./FriendGrid";
 import { ProfileScrapsSection } from "./ProfileScrapsSection";
 import { ProfileTestimonialsSection } from "./ProfileTestimonialsSection";
+import { ProfileApprovedTestimonials } from "./ProfileApprovedTestimonials";
 import { FriendshipButton } from "./FriendshipButton";
 import { FriendRatingPanel } from "./FriendRatingPanel";
 import { fetchProfileScores, type MyRating } from "@/lib/ratings";
@@ -73,6 +74,21 @@ export function ProfilePageClient({
   }, [profileUser.id]);
 
   const canRate = !isOwnProfile && friendshipState.status === "friends";
+
+  // Scraps e depoimentos ficam aqui (e não dentro das abas) para sobreviverem à troca de aba e
+  // para o perfil mostrar os depoimentos aprovados sem nova leitura no servidor.
+  const [scrapItems, setScrapItems] = useState<Scrap[]>(scrapsData.scraps);
+  const [scrapAuthors, setScrapAuthors] = useState<User[]>(scrapsData.authors);
+  const [testimonialItems, setTestimonialItems] = useState<Testimonial[]>(testimonialsData.testimonials);
+  const [testimonialAuthors, setTestimonialAuthors] = useState<User[]>(testimonialsData.authors);
+  const handleScrapsChange = useCallback((items: Scrap[], authors: User[]) => {
+    setScrapItems(items);
+    setScrapAuthors(authors);
+  }, []);
+  const handleTestimonialsChange = useCallback((items: Testimonial[], authors: User[]) => {
+    setTestimonialItems(items);
+    setTestimonialAuthors(authors);
+  }, []);
 
   // Depoimentos aguardando aprovação (só o dono do perfil enxerga): destaca a aba para ele não perder nenhum.
   const [pendingTestimonials, setPendingTestimonials] = useState(
@@ -233,6 +249,15 @@ export function ProfilePageClient({
                     </div>
                   </div>
                 )}
+
+                <ProfileApprovedTestimonials
+                  firstName={firstName}
+                  testimonials={testimonialItems}
+                  authors={testimonialAuthors}
+                  isOwnProfile={isOwnProfile}
+                  loadError={testimonialsData.error}
+                  onSeeAll={() => setActiveTab("depoimentos")}
+                />
               </div>
             )}
 
@@ -240,11 +265,12 @@ export function ProfilePageClient({
               <ProfileScrapsSection
                 profileOwner={profileUser}
                 currentUser={currentUser}
-                initialScraps={scrapsData.scraps}
-                authors={scrapsData.authors}
+                initialScraps={scrapItems}
+                authors={scrapAuthors}
                 isOwnProfile={isOwnProfile}
                 friendshipStatus={friendshipState.status}
                 loadError={scrapsData.error}
+                onScrapsChange={handleScrapsChange}
               />
             )}
 
@@ -252,11 +278,12 @@ export function ProfilePageClient({
               <ProfileTestimonialsSection
                 profileOwner={profileUser}
                 currentUser={currentUser}
-                initialTestimonials={testimonialsData.testimonials}
-                authors={testimonialsData.authors}
+                initialTestimonials={testimonialItems}
+                authors={testimonialAuthors}
                 isOwnProfile={isOwnProfile}
                 loadError={testimonialsData.error}
                 onPendingChange={setPendingTestimonials}
+                onItemsChange={handleTestimonialsChange}
               />
             )}
           </div>

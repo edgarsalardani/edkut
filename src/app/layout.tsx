@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "edkut — conectando quem aprende, ensina e compartilha tecnologia",
+  title: "edkut — conectando quem vive tecnologia",
   description:
-    "edkut é a rede social acadêmica e tecnológica para estudantes, professores, pesquisadores e profissionais de Computação e Tecnologia.",
+    "Um espaço para estudantes que vivem tecnologia. Faça amizades, participe de comunidades, compartilhe conhecimentos e aprenda com quem tem os mesmos interesses que você.",
 };
 
 export default function RootLayout({

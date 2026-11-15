@@ -5,6 +5,7 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { Testimonial, User } from "@/types";
 import { TestimonialCard } from "./TestimonialCard";
 import { UserAvatar } from "./Avatar";
+import { EmoticonTextarea } from "./EmoticonTextarea";
 import {
   TESTIMONIAL_MAX_LENGTH,
   deleteTestimonial,
@@ -24,6 +25,8 @@ interface ProfileTestimonialsSectionProps {
   loadError?: boolean;
   /** Avisa o pai quantos depoimentos aguardam aprovação (só faz sentido para o dono do perfil). */
   onPendingChange?: (count: number) => void;
+  /** Avisa o pai quando a lista muda (enviar, aprovar, recusar, apagar), para o perfil e a aba ficarem em sincronia. */
+  onItemsChange?: (items: Testimonial[], authors: User[]) => void;
 }
 
 function Group({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -49,6 +52,7 @@ export function ProfileTestimonialsSection({
   isOwnProfile,
   loadError = false,
   onPendingChange,
+  onItemsChange,
 }: ProfileTestimonialsSectionProps) {
   const [items, setItems] = useState(initialTestimonials);
   const [authorsById, setAuthorsById] = useState(() => new Map(authors.map((a) => [a.id, a])));
@@ -74,6 +78,11 @@ export function ProfileTestimonialsSection({
   useEffect(() => {
     if (isOwnProfile) onPendingChange?.(pending.length);
   }, [isOwnProfile, pending.length, onPendingChange]);
+
+  useEffect(() => {
+    onItemsChange?.(items, Array.from(authorsById.values()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, authorsById]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -190,18 +199,16 @@ export function ProfileTestimonialsSection({
             <form onSubmit={handleSubmit} className="flex gap-2 py-3" noValidate>
               <UserAvatar user={currentUser} size="xs" />
               <div className="min-w-0 flex-1">
-                <textarea
+                <EmoticonTextarea
                   value={message}
-                  onChange={(e) => {
-                    setMessage(e.target.value);
+                  onChange={(next) => {
+                    setMessage(next);
                     setError(null);
                   }}
                   placeholder={`Escreva um depoimento sobre ${firstName}...`}
-                  rows={2}
-                  className="edkut-input resize-none"
                   disabled={submitting}
-                  aria-label={`Depoimento sobre ${firstName}`}
-                  aria-invalid={error ? true : undefined}
+                  ariaLabel={`Depoimento sobre ${firstName}`}
+                  invalid={!!error}
                 />
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className={`text-[11px] ${Array.from(message).length > TESTIMONIAL_MAX_LENGTH ? "font-bold text-edkut-pinkDark" : "text-edkut-muted"}`}>

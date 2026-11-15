@@ -78,6 +78,44 @@ export interface Community {
   createdAt: string;
 }
 
+// --- Comunidades REAIS (Supabase; migrações 4, 12 e 13) ---------------------------------------------
+// Os tipos `Community` acima pertencem ao protótipo com dados fictícios e não são usados pelas telas reais.
+
+/** 'open' = entra na hora; 'approval' = solicita e aguarda criador/moderador. Independe da visibilidade. */
+export type JoinPolicy = "open" | "approval";
+export type CommunityRole = "member" | "moderator";
+export type JoinRequestStatus = "pending" | "approved" | "declined" | "canceled";
+
+export interface CommunityInfo {
+  id: string;
+  name: string;
+  description: string;
+  longDescription?: string;
+  category: string;
+  emoji: string;
+  color: string;
+  /** URL pública da imagem (bucket community-images); ausente => emoji + cor. */
+  imageUrl?: string;
+  joinPolicy: JoinPolicy;
+  /** Nulo quando a conta do criador foi excluída. */
+  creatorId: string | null;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface CommunityMemberInfo {
+  userId: string;
+  role: CommunityRole;
+  joinedAt: string;
+}
+
+export interface JoinRequestInfo {
+  id: string;
+  communityId: string;
+  userId: string;
+  createdAt: string;
+}
+
 /**
  * Tipo de publicação. "texto" é o único totalmente suportado na V1.
  * Os demais já existem no modelo para não travar a evolução futura
@@ -118,6 +156,8 @@ export interface Scrap {
   authorId: string;
   message: string;
   createdAt: string;
+  /** Id do scrap original quando este é uma RESPOSTA (migração 11); nulo/ausente nos scraps raiz. */
+  parentId?: string | null;
 }
 
 export interface Testimonial {

@@ -27,7 +27,7 @@ export function Logo({ size = "md", withSlogan = false, className = "" }: LogoPr
       </span>
       {withSlogan && (
         <span className="mt-0.5 text-xs italic text-edkut-muted">
-          conectando quem aprende, ensina e compartilha tecnologia
+          conectando quem vive tecnologia
         </span>
       )}
     </div>

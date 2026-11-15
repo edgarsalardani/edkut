@@ -6,15 +6,6 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { MIN_PASSWORD_LENGTH, USERNAME_RE, signIn, signUp } from "@/lib/session";
 
-const HIGHLIGHT_COMMUNITIES = [
-  { emoji: "🛠️", label: "Engenharia de Software" },
-  { emoji: "🎯", label: "IHC e Usabilidade" },
-  { emoji: "🤖", label: "Inteligência Artificial" },
-  { emoji: "🐛", label: "Meu código funciona, não sei por quê" },
-  { emoji: "📚", label: "Só mais um artigo e eu começo o TCC" },
-  { emoji: "🌐", label: "Desenvolvimento Web" },
-];
-
 type Mode = "entrar" | "cadastrar";
 
 export default function LoginPage() {
@@ -115,24 +106,13 @@ export default function LoginPage() {
           {/* Área esquerda — boas-vindas */}
           <div className="border border-edkut-border bg-edkut-card rounded-edkut p-5">
             <h1 className="font-heading text-lg font-bold text-edkut-blue">Bem-vindo ao edkut!</h1>
-            <p className="mt-2 text-sm text-edkut-text">
-              O edkut conecta estudantes, professores, pesquisadores, egressos e
-              profissionais interessados em Computação e Tecnologia. Encontre
-              comunidades, participe de discussões e faça conexões com quem também
-              vive código, IHC, IA e um pouco de nostalgia.
+            <p className="mt-2 text-sm font-semibold text-edkut-text">
+              Um espaço para estudantes que vivem tecnologia.
             </p>
-
-            <p className="mt-4 text-xs font-bold uppercase tracking-wide text-edkut-muted">
-              comunidades em destaque
+            <p className="mt-3 text-sm text-edkut-text">
+              Faça amizades, participe de comunidades, compartilhe conhecimentos e aprenda com quem tem os mesmos
+              interesses que você.
             </p>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {HIGHLIGHT_COMMUNITIES.map((c) => (
-                <li key={c.label} className="edkut-tag flex items-center gap-1">
-                  <span aria-hidden="true">{c.emoji}</span>
-                  {c.label}
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* Área direita — acesso */}

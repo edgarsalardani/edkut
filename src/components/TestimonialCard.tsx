@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { Testimonial, User } from "@/types";
 import { UserAvatar } from "./Avatar";
+import { EmoticonText } from "./Emoticon";
 import { formatRelativeTime } from "@/lib/format";
 
 const STATUS_BADGE: Record<NonNullable<Testimonial["status"]>, { label: string; className: string } | null> = {
@@ -49,7 +50,7 @@ export function TestimonialCard({
           <span className="text-xs text-edkut-faint">{formatRelativeTime(testimonial.createdAt)}</span>
           {badge && <span className={`rounded-edkut border px-1.5 text-[11px] font-semibold ${badge.className}`}>{badge.label}</span>}
         </div>
-        <p className="mt-0.5 whitespace-pre-wrap break-words text-sm italic text-edkut-text">&ldquo;{testimonial.message}&rdquo;</p>
+        <p className="mt-0.5 whitespace-pre-wrap break-words text-sm italic text-edkut-text">&ldquo;<EmoticonText text={testimonial.message} />&rdquo;</p>
         {actions && <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">{actions}</div>}
       </div>
     </div>
