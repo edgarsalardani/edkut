@@ -4,10 +4,11 @@ import { CommunityPageClient } from "@/components/CommunityPageClient";
 import { getCurrentUser } from "@/services/authService";
 import { getCommunityPageData } from "@/services/communityService";
 import { isUuid } from "@/lib/uuid";
+import { parseCommunityTab, parseTopicId } from "@/lib/forum";
 
 interface CommunityPageProps {
   params: { id: string };
-  searchParams?: { imagem?: string };
+  searchParams?: { imagem?: string; aba?: string | string[]; topico?: string | string[] };
 }
 
 export default async function CommunityPage({ params, searchParams }: CommunityPageProps) {
@@ -39,6 +40,8 @@ export default async function CommunityPage({ params, searchParams }: CommunityP
         membersTruncated={data.membersTruncated}
         currentUser={currentUser}
         imageWarning={searchParams?.imagem === "falhou"}
+        initialTab={parseCommunityTab(typeof searchParams?.aba === "string" ? searchParams.aba : undefined)}
+        initialTopicId={parseTopicId(typeof searchParams?.topico === "string" ? searchParams.topico : undefined)}
       />
     </AppShell>
   );

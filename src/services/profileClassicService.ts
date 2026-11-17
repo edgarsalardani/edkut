@@ -106,8 +106,11 @@ export async function getProfileCommunities(profileId: string, limit: number): P
     if (ids.length === 0) return { items: [], total, error: false };
 
     const cols = "id, name, emoji, color, member_count";
-    let res = await supabase.from("communities").select(`${cols}, image_path`).in("id", ids);
-    if (res.error?.code === "42703") res = await supabase.from("communities").select(cols).in("id", ids); // migração 13 pendente
+
+    const res = await supabase
+      .from("communities")
+      .select(`${cols}, image_path`)
+      .in("id", ids);
     if (res.error) throw new Error(res.error.message);
     const byId = new Map<string, ProfileCommunity>();
     for (const r of (res.data as unknown as { id: string; name: string; emoji: string; color: string; member_count: number; image_path?: string | null }[]) ?? []) {

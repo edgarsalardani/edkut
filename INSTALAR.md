@@ -1,55 +1,76 @@
-# EdKut — Entrega 4: Home no estilo Orkut clássico
+# EdKut — Entrega 5: fóruns de discussão das comunidades
 
-A página `/home` (botão "início") agora segue o mesmo visual do Perfil Clássico: 3 colunas, cartões brancos em fundo azul-claro,
-mesmos indicadores (estrela, carinhas, cubinhos, corações), mesmo quadro de amigos e de comunidades.
-**Sem migration nova** (usa as tabelas/colunas da migration 14) e **sem tabela nova**. Nada foi aplicado no seu Supabase; sem commit/push.
+Cada comunidade ganha abas **informações | fórum | membros | administração**. No fórum: lista de tópicos (mais recentemente ativos primeiro),
+criar tópico, comentar, **responder a um comentário (um nível)**, emoticons (o seletor que já existe), apagar com confirmação e moderação.
+Tudo guardado no Supabase, com as permissões garantidas por **RLS e gatilhos no banco** (não só pela tela).
+Nada foi aplicado no seu Supabase; sem commit/push; LaTeX e demais recursos intocados.
 
 ## 1. Pré-requisitos
-Migrations 1–14 aplicadas (a 14 é a do perfil clássico). Sem ela a Home ainda abre, mas mostra um aviso e os contadores de fotos/vídeos/fãs ficam em "–".
+Migrations 1–14 aplicadas (a 15 usa `is_community_member`, da 12, e `is_community_moderator`, da 4). A numeração 15 estava livre (a 14 é do perfil clássico).
 
-## 2. Instalação
-Faça backup/branch e copie o conteúdo do ZIP sobre a raiz do projeto, mantendo as pastas. Não há comando extra (`npm run dev` / deploy normal).
+## 2. Instalação (nesta ordem)
+1. Backup/branch do projeto e do banco. Teste primeiro em um projeto Supabase de **desenvolvimento**.
+2. SQL Editor → cole e execute **`supabase/migrations/20261117150001_community_forum.sql`** inteiro (transação única: se falhar, nada é aplicado). Conferência e "como desfazer" estão em comentários no fim do arquivo.
+3. Copie o conteúdo deste ZIP sobre a raiz do projeto, mantendo as pastas. Publique o app **depois** da migration.
+4. Opcional (DEV): rode `supabase/tests/community_forum_smoke_test.sql` no SQL Editor — cria usuários de teste e termina em ROLLBACK.
 
 ## 3. Arquivos
-**Novos (2):**
-- `src/components/HomeClassicView.tsx` — Home (apresentação; só mostra dados reais recebidos da página)
-- `src/services/homeService.ts` — últimos recados recebidos, solicitações de amizade pendentes e depoimentos aguardando aprovação
+**Novos (7):**
+- `supabase/migrations/20261117150001_community_forum.sql`
+- `supabase/tests/community_forum_smoke_test.sql`
+- `src/lib/forum.ts` — regras, validações e chamadas ao Supabase (navegador)
+- `src/components/CommunityForum.tsx` — lista de tópicos, criar tópico
+- `src/components/ForumTopicView.tsx` — tópico, comentários, respostas, moderação
+- `src/components/ForumAuthor.tsx` — foto + nome do autor (link para o perfil)
 
-**Substituídos (7):**
-- `src/app/home/page.tsx` — passa a usar a nova Home (o quadro antigo de "novidades" foi removido; `ProfileCard` deixou de ser usado aqui, mas o arquivo continua no projeto)
-- `src/services/profileClassicService.ts` — acrescenta `getProfileSummary` (versão leve, sem fotos/vídeos); o restante é idêntico
-- `src/lib/profileClassic.ts` — acrescenta `parseInitialTab` e o tipo `ProfileTab` no final
-- `src/components/ClassicIndicators.tsx` — nova propriedade opcional `stacked` (um indicador por linha); o perfil não muda
-- `src/app/profile/[id]/page.tsx` e `src/components/ProfilePageClient.tsx` — o perfil agora aceita `?aba=fotos|videos|recados|depoimentos` (usado pelos atalhos Fotos/Vídeos do menu da Home)
-- `src/components/ProfileStatusEditor.tsx` — correção (ver abaixo)
+**Substituídos (3):**
+- `src/components/CommunityPageClient.tsx` — novas abas "informações" e "fórum"; removido o aviso provisório "o fórum chega na próxima entrega"; o resto (membros, administração, entrar/sair) é igual
+- `src/app/communities/[id]/page.tsx` — lê `?aba=` e `?topico=` da URL
+- `src/types/index.ts` — acrescenta os tipos do fórum no final
 
-> Alterações no perfil, só estas duas: (1) abas por URL; (2) **correção de bug do meu código anterior**: um status de 100 caracteres sem espaços (ou nome enorme) alargava a página no celular, gerando rolagem horizontal. Corrigido no perfil (`ProfilePageClient`, `ProfileStatusEditor`) e já nasce corrigido na Home.
+## 4. Banco de dados (migration 15)
+- **`community_topics`** (título 3–120, mensagem inicial 1–5000, `reply_count`, `last_activity_at`) e **`community_topic_replies`** (comentário = `parent_id` nulo; resposta = `parent_id` de um comentário do **mesmo** tópico; 1–2000 caracteres). Mesma modelagem prevista, com `parent_id` para as respostas. Nenhuma tabela existente foi alterada (`posts`, `scraps`, `testimonials`, amizades, comunidades).
+- **Permissões (RLS):** ler = qualquer usuário autenticado · criar tópico/comentar/responder = **só membro** (quem saiu ou foi removido perde na hora; solicitação pendente não conta) · apagar = o **autor** ou o **criador/moderador** da comunidade.
+- **Imutável:** não há UPDATE para o cliente, então ninguém troca autor, comunidade ou tópico. O cliente só informa `(community_id, title, body)` / `(topic_id, parent_id, body)`; autor vem de `auth.uid()`; a comunidade da mensagem é copiada do tópico por gatilho + chave estrangeira composta.
+- **1 nível:** gatilho recusa resposta a resposta (erro 23514). Apagar comentário apaga suas respostas; apagar tópico apaga tudo dele.
+- **Contadores reais:** `reply_count` (comentários + respostas) e `last_activity_at` mantidos por gatilho e recalculados ao apagar.
+- **Anti-abuso (por autor):** máx. 5 tópicos/10 min e 15 mensagens/min (erro 54000); mensagem idêntica repetida no mesmo tópico em 60 s é recusada. Texto normalizado no banco (pontas aparadas, caracteres de controle descartados).
+- **HTML:** guardado e exibido como **texto puro** (a tela nunca interpreta HTML; `<script>` aparece literalmente).
+- **Conta excluída:** a conversa permanece e o autor aparece como "usuário indisponível".
+- **Índices** para a lista por atividade, comentários por tópico, respostas por comentário e limites por autor. **Futuro (denúncias):** uma tabela `community_topic_reports` apontando para tópico/mensagem.
 
-## 4. O que a Home mostra (tudo real)
-- **Esquerda:** foto, nome, tipo (Estudante/Professor…), frase de status do perfil, indicadores clássicos (os mesmos do perfil — nenhum percentual NERD/PARCEIRO/TECH) e menu vertical: perfil, recados (→ `/scraps`), fotos e vídeos (→ abas do perfil), depoimentos (→ `/testimonials`), amigos (→ `/friends`), comunidades (→ `/communities`), com contadores.
-- **Centro:** saudação; atalhos (recados, depoimentos aguardando aprovação, solicitações de amizade pendentes — destacados em rosa quando há pendência —, comunidades, encontrar pessoas); solicitações de amizade pendentes (até 3); últimos 3 recados recebidos; e um aviso discreto de que as publicações dos amigos ainda não existem (nenhuma publicação fictícia).
-- **Direita:** os mesmos quadros do perfil — amigos (foto, nome, total, "ver todos") e comunidades (imagem, nome, total, "ver todas").
-- **Menu superior:** inalterado (início, perfil, amigos, comunidades, scraps, depoimentos). Login/redirecionamentos: inalterados.
-- **Celular:** colunas empilhadas (identidade → centro → conexões); o menu vira grade de 2–3 colunas; sem rolagem horizontal.
+## 5. Decisões aplicadas (revise)
+1. Qualquer usuário autenticado **lê** o fórum, inclusive de comunidade com entrada por aprovação (como o restante do app).
+2. Quem saiu/foi removido **não publica**, mas ainda pode **apagar o que ele mesmo escreveu**.
+3. O autor de um tópico apaga o **próprio tópico** (e as mensagens dele); **não** apaga mensagens de outras pessoas — isso é do criador/moderador da comunidade. Se quiser que o autor do tópico também modere o próprio tópico, é uma policy a mais.
+4. Moderadores podem apagar conteúdo de qualquer pessoa, inclusive de outro moderador ou do criador (sem hierarquia entre eles).
+5. Sem edição de tópicos/mensagens nesta versão (garante a integridade de autor/conteúdo).
+6. A aba padrão da comunidade passou a ser **"informações"** (antes era "membros"); `?aba=forum` abre o fórum e `?topico=<id>` abre um tópico (o F5 mantém o lugar).
+7. Paginação por faixa: 20 tópicos e 20 comentários por página ("carregar mais"); respostas vêm junto dos comentários carregados (até 500).
 
-## 5. Checklist de testes manuais (conta A com amigos, comunidades, recados; conta B para pedir amizade/deixar recado)
-1. Login → cai em `/home` com 3 colunas no desktop; clicar em "início" no topo leva à mesma Home.
-2. Esquerda: foto, nome, tipo, status **igual** ao do perfil (edite o status no perfil e recarregue a Home); indicadores iguais aos do perfil, sem percentuais; sem status → link "escreva uma frase de status".
-3. Menu lateral: perfil; recados → `/scraps`; fotos/vídeos → perfil já na aba certa; depoimentos → `/testimonials`; amigos → `/friends`; comunidades → `/communities`. Contadores conferem.
-4. B envia solicitação de amizade a A → na Home de A: atalho e quadro "solicitações de amizade" com B; "aceitar ou recusar" abre `/friends`.
-5. B deixa um recado (precisa ser amigo) e um depoimento → Home de A: recado em "últimos recados"; depoimento pendente destaca o atalho e o menu ("N novos"). Aprovar o depoimento zera o destaque.
-6. Direita: amigos e comunidades reais, miniaturas e nomes clicáveis, "ver todos"/"ver todas". Conta sem amigos/comunidades mostra mensagens vazias com link.
-7. Não existe mais o quadro "novidades"; o aviso do feed é pequeno.
-8. Celular (≈390 px): nada sobreposto nem cortado; sem rolagem horizontal; menu acessível.
-9. Perfil, scraps/respostas, depoimentos, fotos, vídeos e comunidades continuam como antes; `?aba=fotos` no perfil abre a galeria.
+## 6. Checklist de testes manuais (contas: A = criador, B = membro, C = moderador promovido, D = sem ser membro)
+1. Comunidade → aba **fórum**: lista vazia mostra o convite; B clica "criar tópico", cria um tópico com emoticon → abre o tópico; volta e ele está no topo com 0 mensagens.
+2. D abre o fórum: **lê** tópicos e comentários, **não** vê "criar tópico", comentar nem responder; mostra o aviso para entrar.
+3. D (comunidade com aprovação, pedido pendente): mesmo comportamento, aviso de "aguardando aprovação".
+4. B comenta (use o seletor de emoticons); A responde ao comentário → resposta aparece recuada, vinculada ao comentário; respostas não têm "responder".
+5. Atualize a página (F5) dentro do tópico: continua no mesmo tópico, com tudo salvo; o contador na lista confere.
+6. B apaga a **própria** mensagem (pede confirmação); B **não** vê "apagar" nas mensagens dos outros.
+7. C (moderador) apaga um comentário alheio (a confirmação avisa que as respostas vão junto) e um tópico inadequado; A (criador) também.
+8. A remove B da comunidade (aba membros): B ainda lê, mas não consegue mais criar/comentar/responder (mensagem clara); ao reentrar volta a poder.
+9. Publique várias vezes seguidas (ou repita a mesma mensagem): aparece o aviso de limite/repetição.
+10. Cole `<script>alert(1)</script>` num comentário: aparece como texto, nada executa.
+11. Celular (≈390 px): lista, tópico e formulários sem rolagem horizontal.
+12. Regressão: entrar/sair/solicitar participação, administração, imagem da comunidade, perfil, recados, depoimentos, fotos e vídeos como antes.
 
-## 6. Testes executados — e limites
-**Executado (ambiente local):**
-- Home no Chromium (Playwright, 45 verificações) com dados **simulados**: 3 colunas e larguras idênticas às do perfil (190/flex/250), empilhamento em 360/390/768 px sem rolagem horizontal, menu e destinos dos links, indicadores iguais aos do perfil, atalhos e pendências, recados com emoticon, autor desconhecido, estados vazios, aviso sem a migration 14, nome/status longos.
-- Perfil (103 verificações) e Comunidades no Chromium, lógica do perfil (60) e `parseInitialTab` — todos passando após as mudanças. Checagem de tipos TypeScript com stubs.
-- Não houve mudança de SQL nesta entrega (a regressão SQL da entrega 3 continua valendo).
+## 7. Testes executados — e limites
+**Executado de verdade (ambiente local de teste):**
+- **Migration 15 + teste SQL** num PostgreSQL 16 local com **emulação** do Supabase (roles, `auth.uid()`, RLS real do Postgres) junto com as migrations 1–14 — membro cria/comenta/responde; não membro, pendente, removido e anônimo recusados pelo banco; autor/comunidade imutáveis; profundidade de 1 nível; apagar (autor, moderador, criador, cascata, contadores); limites de tamanho; HTML como texto; repetição e frequência; conta excluída; comunidade apagada.
+- **Interface no Chromium** (Playwright, 78 verificações) com Supabase **simulado em memória**: lista, ordenação, criar tópico, comentar, responder, emoticons nos 3 campos, persistência após recarregar, apagar com confirmação (autor/moderador/criador), visitante e pendente, paginação, HTML como texto, erros do servidor, 360/390 px sem rolagem horizontal. Mais **15 grupos de lógica** (validações, agrupamento, URL, mensagens de erro).
+- **Regressão:** testes SQL de comunidades, avatares, avaliações, busca, perfil clássico, edição de perfil, scraps/respostas e depoimentos, e as interfaces de comunidades (uitest2), perfil, Home — todos passando; checagem de tipos TypeScript com stubs.
+- Ajuste de teste: a interface de comunidades agora é testada abrindo a aba "membros" explicitamente (a aba padrão mudou).
 
-**NÃO verificado:** `npm run build`/lint do seu projeto; Supabase real (Auth, PostgREST, RLS via API) — as consultas novas da Home (últimos recados, depoimentos pendentes, solicitações) usam as mesmas tabelas/regras já existentes, mas rodaram aqui só com cliente simulado; CSS compilado com Tailwind v4 (aproximação do seu build).
+**NÃO verificado:** `npm run build`/lint do seu projeto; **Supabase real** (Auth, PostgREST, Storage, RLS via API HTTP — as políticas foram testadas direto no Postgres local, e a interface só com cliente simulado); o CSS dos testes foi compilado com Tailwind v4 (aproximação do seu build); desempenho com volume real de dados.
+**Teste antigo já desatualizado (não é da entrega 15):** `s1/supabase/tests/rls_smoke_test.sql` falha na asserção "postagem aberta", porque a migration 12 passou a exigir ser membro para postar em comunidade.
 
-## 7. Fora desta entrega
-Feed de publicações dos amigos, fórum das comunidades (migrations 15+), documentação LaTeX.
+## 8. Fora desta entrega
+Feed geral, notificações do fórum, denúncias, edição de mensagens, bloqueio/fixação de tópicos, documentação LaTeX.

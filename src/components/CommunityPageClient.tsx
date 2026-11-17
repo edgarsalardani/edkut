@@ -6,6 +6,8 @@ import { CommunityInfo, CommunityMemberInfo, CommunityRole, JoinRequestInfo, Use
 import { Avatar, UserAvatar } from "./Avatar";
 import { CommunityFields } from "./CommunityFields";
 import { CommunityImageField } from "./CommunityImageField";
+import { CommunityForum } from "./CommunityForum";
+import type { CommunityTab } from "@/lib/forum";
 import { formatRelativeTime } from "@/lib/format";
 import {
   JOIN_POLICY_LABEL,
@@ -25,7 +27,7 @@ import {
   type CommunityFields as Fields,
 } from "@/lib/communities";
 
-type Tab = "membros" | "administracao";
+type Tab = CommunityTab;
 
 interface CommunityPageClientProps {
   initialCommunity: CommunityInfo;
@@ -38,6 +40,10 @@ interface CommunityPageClientProps {
   membersTruncated: boolean;
   currentUser: User;
   imageWarning?: boolean;
+  /** Aba aberta ao carregar (vem de ?aba= na URL). */
+  initialTab?: Tab;
+  /** Tópico do fórum aberto ao carregar (vem de ?topico= na URL). */
+  initialTopicId?: string | null;
 }
 
 function toFields(c: CommunityInfo): Fields {
@@ -55,6 +61,8 @@ export function CommunityPageClient({
   membersTruncated,
   currentUser,
   imageWarning = false,
+  initialTab = "informacoes",
+  initialTopicId = null,
 }: CommunityPageClientProps) {
   const [community, setCommunity] = useState(initialCommunity);
   const [members, setMembers] = useState(initialMembers);
@@ -64,7 +72,7 @@ export function CommunityPageClient({
   const [requests, setRequests] = useState(initialRequests);
   const [memberCount, setMemberCount] = useState(initialCommunity.memberCount);
 
-  const [tab, setTab] = useState<Tab>("membros");
+  const [tab, setTab] = useState<Tab>(initialTab === "administracao" && initialRole !== "moderator" && initialCommunity.creatorId !== currentUser.id ? "informacoes" : initialTab);
   const [busy, setBusy] = useState<string | null>(null); // ação em andamento (evita duplo clique)
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(imageWarning ? "A comunidade foi criada, mas a imagem não pôde ser enviada. Você pode tentar de novo em administração." : null);
@@ -133,7 +141,7 @@ export function CommunityPageClient({
       setRole(undefined);
       setMemberCount((n) => Math.max(n - 1, 0));
       setConfirming(null);
-      setTab("membros");
+      setTab("informacoes");
       setNotice("Você saiu da comunidade.");
     });
   }
@@ -249,16 +257,25 @@ export function CommunityPageClient({
       )}
 
       {/* Abas */}
-      <div className="flex gap-1 border-b border-edkut-border" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "membros"}
-          onClick={() => setTab("membros")}
-          className={`px-3 py-2 font-heading text-sm font-bold ${tab === "membros" ? "border-b-2 border-edkut-pink text-edkut-pink" : "text-edkut-muted hover:text-edkut-blue"}`}
-        >
-          membros ({memberCount})
-        </button>
+      <div className="flex gap-1 overflow-x-auto border-b border-edkut-border" role="tablist" aria-label="Seções da comunidade">
+        {(
+          [
+            ["informacoes", "informações"],
+            ["forum", "fórum"],
+            ["membros", `membros (${memberCount})`],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`shrink-0 px-3 py-2 font-heading text-sm font-bold ${tab === id ? "border-b-2 border-edkut-pink text-edkut-pink" : "text-edkut-muted hover:text-edkut-blue"}`}
+          >
+            {label}
+          </button>
+        ))}
         {isMod && (
           <button
             type="button"
@@ -271,6 +288,51 @@ export function CommunityPageClient({
           </button>
         )}
       </div>
+
+      {tab === "informacoes" && (
+        <div className="edkut-card" data-testid="community-info">
+          <div className="edkut-card-title">informações</div>
+          <dl className="text-sm">
+            {(
+              [
+                ["categoria", community.category],
+                ["tipo de entrada", JOIN_POLICY_LABEL[community.joinPolicy]],
+                ["criada em", new Date(community.createdAt).toLocaleDateString("pt-BR")],
+                ["membros", memberCount.toLocaleString("pt-BR")],
+                ["moderadores", String(members.filter((m) => m.role === "moderator").length)],
+              ] as const
+            ).map(([label, value], i) => (
+              <div key={label} className={`flex gap-3 px-3.5 py-1.5 ${i % 2 === 0 ? "bg-white" : "bg-edkut-blueSoft"}`}>
+                <dt className="w-36 shrink-0 font-semibold text-edkut-muted">{label}</dt>
+                <dd className="min-w-0 break-words text-edkut-text">{value}</dd>
+              </div>
+            ))}
+            {creator && (
+              <div className="flex gap-3 bg-white px-3.5 py-1.5">
+                <dt className="w-36 shrink-0 font-semibold text-edkut-muted">criador</dt>
+                <dd className="min-w-0 break-words">
+                  <Link href={`/profile/${creator.id}`} className="edkut-link">{creator.name}</Link>
+                </dd>
+              </div>
+            )}
+          </dl>
+          <p className="border-t border-edkut-border px-3.5 py-2 text-xs text-edkut-muted">
+            Converse com a comunidade no <button type="button" className="edkut-link font-semibold" onClick={() => setTab("forum")}>fórum</button>.
+          </p>
+        </div>
+      )}
+
+      {tab === "forum" && (
+        <CommunityForum
+          communityId={community.id}
+          currentUser={currentUser}
+          isMember={isMember}
+          isModerator={isMod}
+          pending={status === "pending"}
+          knownAuthors={Array.from(people.values())}
+          initialTopicId={initialTopicId}
+        />
+      )}
 
       {tab === "membros" && (
         <div className="edkut-card">
@@ -367,10 +429,6 @@ export function CommunityPageClient({
           )}
         </div>
       )}
-
-      <p className="rounded-edkut border border-dashed border-edkut-border p-3 text-center text-xs text-edkut-muted">
-        O fórum de discussões desta comunidade chega na próxima entrega.
-      </p>
     </div>
   );
 }

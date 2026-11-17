@@ -240,3 +240,36 @@ export interface ProfileCommunity {
   imageUrl?: string;
   memberCount: number;
 }
+
+// ----- Fórum das comunidades (migração 15) -----
+/** Autor de um tópico/mensagem (dados mínimos para foto, nome e link). */
+export interface ForumAuthor {
+  id: string;
+  name: string;
+  avatarEmoji: string;
+  avatarColor: string;
+  avatarUrl?: string;
+}
+
+export interface ForumTopic {
+  id: string;
+  communityId: string;
+  /** null = conta do autor excluída. */
+  authorId: string | null;
+  title: string;
+  body: string;
+  /** Comentários + respostas. */
+  replyCount: number;
+  lastActivityAt: string;
+  createdAt: string;
+}
+
+/** Comentário (parentId nulo) ou resposta a um comentário. */
+export interface ForumMessage {
+  id: string;
+  topicId: string;
+  parentId: string | null;
+  authorId: string | null;
+  body: string;
+  createdAt: string;
+}

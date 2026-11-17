@@ -33,10 +33,7 @@ async function recentScrapsOf(userId: string): Promise<{ scrap: Scrap; author: U
     .is("parent_id", null)
     .order("created_at", { ascending: false })
     .limit(HOME_RECENT_SCRAPS);
-  if (res.error?.code === "42703") {
-    // migração 11 pendente: sem parent_id
-    res = await supabase.from("scraps").select(SCRAP_COLUMNS_LEGACY).eq("profile_owner_id", userId).order("created_at", { ascending: false }).limit(HOME_RECENT_SCRAPS);
-  }
+  
   if (res.error) throw new Error(res.error.message);
   const scraps = ((res.data as unknown as ScrapRow[] | null) ?? []).map(rowToScrap);
   const authors = await getProfileUsersByIds(scraps.map((s) => s.authorId));
