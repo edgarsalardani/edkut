@@ -1,17 +1,20 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { ProfilePageClient } from "@/components/ProfilePageClient";
+import { parseInitialTab } from "@/lib/profileClassic";
 import { getCurrentUser, getProfileUserById } from "@/services/authService";
 import { getFriendsOf, getFriendshipState, getMyRating } from "@/services/socialService";
 import { getScrapsWithAuthors } from "@/services/scrapService";
 import { getTestimonialsWithAuthors } from "@/services/testimonialService";
+import { getProfileClassicData } from "@/services/profileClassicService";
 import { isUuid } from "@/lib/uuid";
 
 interface ProfilePageProps {
   params: { id: string };
+  searchParams?: { aba?: string | string[] };
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
   const currentUser = await getCurrentUser();
   const profileUser = await getProfileUserById(params.id);
   if (!profileUser) notFound();
@@ -24,10 +27,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // Só carrego minha avaliação quando o painel pode aparecer (amigo, perfil alheio).
   const myRating = isFriend && !isOwnProfile && isUuid(profileUser.id) ? await getMyRating(profileUser.id) : null;
 
-  const [friends, scrapsData, testimonialsData] = await Promise.all([
+  const [friends, scrapsData, testimonialsData, classic] = await Promise.all([
     getFriendsOf(profileUser.id),
     getScrapsWithAuthors(profileUser.id),
     getTestimonialsWithAuthors(profileUser.id),
+    getProfileClassicData(profileUser.id, currentUser.id),
   ]);
 
   return (
@@ -41,6 +45,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         friends={friends}
         scrapsData={scrapsData}
         testimonialsData={testimonialsData}
+        classic={classic}
+        initialTab={parseInitialTab(typeof searchParams?.aba === "string" ? searchParams.aba : undefined)}
       />
     </AppShell>
   );

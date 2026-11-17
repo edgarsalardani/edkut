@@ -1,66 +1,55 @@
-# EdKut — Entrega 2: comunidades completas
+# EdKut — Entrega 4: Home no estilo Orkut clássico
 
-O que esta entrega faz: criar comunidade (nome, descrição, categoria, imagem), entrada **aberta** ou **mediante aprovação**, entrar/sair, solicitar/cancelar participação, aprovar/recusar (criador e moderadores), lista de participantes, moderadores (definidos pelo criador), remoção de participantes, edição pelo criador, busca/filtro/abas na lista de comunidades.
-Fóruns **não** estão nesta entrega (Entrega 3). A documentação LaTeX não foi alterada.
+A página `/home` (botão "início") agora segue o mesmo visual do Perfil Clássico: 3 colunas, cartões brancos em fundo azul-claro,
+mesmos indicadores (estrela, carinhas, cubinhos, corações), mesmo quadro de amigos e de comunidades.
+**Sem migration nova** (usa as tabelas/colunas da migration 14) e **sem tabela nova**. Nada foi aplicado no seu Supabase; sem commit/push.
 
-## 1. Antes de tudo
-- Faça backup/branch do projeto. Se possível, aplique primeiro em um projeto Supabase de **desenvolvimento**.
-- Esta entrega vem **depois** da Entrega 1 (migration 11 já aplicada). O arquivo `src/types/index.ts` é cumulativo (inclui os tipos da Entrega 1).
+## 1. Pré-requisitos
+Migrations 1–14 aplicadas (a 14 é a do perfil clássico). Sem ela a Home ainda abre, mas mostra um aviso e os contadores de fotos/vídeos/fãs ficam em "–".
 
-## 2. Copiar arquivos (mesmos caminhos, na raiz do projeto)
-Novos ou substituídos:
-- `src/types/index.ts` (substitui)
-- `src/lib/communities.ts` (novo)
-- `src/services/communityService.ts` (**substitui** a versão antiga baseada em dados de exemplo)
-- `src/components/CommunityImageField.tsx`, `CommunityFields.tsx`, `CommunityCard.tsx`, `CommunityPageClient.tsx` (novos)
-- `src/components/CommunitiesPageClient.tsx` (substitui)
-- `src/app/communities/page.tsx` (substitui) e `src/app/communities/[id]/page.tsx` (novo)
-- `supabase/migrations/20261115200001_communities_join_policy_requests.sql` e `20261115200002_communities_image.sql`
-- `supabase/tests/communities_smoke_test.sql` (opcional)
+## 2. Instalação
+Faça backup/branch e copie o conteúdo do ZIP sobre a raiz do projeto, mantendo as pastas. Não há comando extra (`npm run dev` / deploy normal).
 
-**Apague** `src/components/CommunityHeader.tsx` (não é mais usado). `CommunityGrid.tsx`, os dados de exemplo e `searchService` não foram alterados. Se algum outro arquivo seu importava funções do antigo `communityService.ts`, ajuste-o (no projeto que recebi, nenhum importava).
+## 3. Arquivos
+**Novos (2):**
+- `src/components/HomeClassicView.tsx` — Home (apresentação; só mostra dados reais recebidos da página)
+- `src/services/homeService.ts` — últimos recados recebidos, solicitações de amizade pendentes e depoimentos aguardando aprovação
 
-## 3. Aplicar as migrations (SQL Editor, como `postgres`) — ANTES de publicar o app
-Cada arquivo roda uma vez, em uma transação, **nesta ordem**:
-1. `20261115200001_communities_join_policy_requests.sql`
-2. `20261115200002_communities_image.sql`
+**Substituídos (7):**
+- `src/app/home/page.tsx` — passa a usar a nova Home (o quadro antigo de "novidades" foi removido; `ProfileCard` deixou de ser usado aqui, mas o arquivo continua no projeto)
+- `src/services/profileClassicService.ts` — acrescenta `getProfileSummary` (versão leve, sem fotos/vídeos); o restante é idêntico
+- `src/lib/profileClassic.ts` — acrescenta `parseInitialTab` e o tipo `ProfileTab` no final
+- `src/components/ClassicIndicators.tsx` — nova propriedade opcional `stacked` (um indicador por linha); o perfil não muda
+- `src/app/profile/[id]/page.tsx` e `src/components/ProfilePageClient.tsx` — o perfil agora aceita `?aba=fotos|videos|recados|depoimentos` (usado pelos atalhos Fotos/Vídeos do menu da Home)
+- `src/components/ProfileStatusEditor.tsx` — correção (ver abaixo)
 
-Conferência (somente leitura), após a 1ª:
-```sql
-select join_policy, count(*) from public.communities group by 1;   -- tudo 'open'
-select count(*) from public.communities;  select count(*) from public.community_members;  -- iguais aos de antes
-select policyname from pg_policies where schemaname='public' and tablename='communities' order by 1;
--- esperado: communities_delete_creator, communities_insert_as_creator, communities_select_authenticated, communities_update_creator
-```
-Após a 2ª:
-```sql
-select id, public, file_size_limit from storage.buckets where id = 'community-images';  -- public = true, 2097152
-select column_name from information_schema.columns where table_name='communities' and column_name in ('join_policy','image_path');
-```
-Nenhuma tabela/coluna existente é removida; comunidades e membros atuais viram `entrada aberta`. Instruções de desfazer estão no fim de cada arquivo.
+> Alterações no perfil, só estas duas: (1) abas por URL; (2) **correção de bug do meu código anterior**: um status de 100 caracteres sem espaços (ou nome enorme) alargava a página no celular, gerando rolagem horizontal. Corrigido no perfil (`ProfilePageClient`, `ProfileStatusEditor`) e já nasce corrigido na Home.
 
-## 4. Rodar
-`npm run dev` (ou build). Sem as migrations a tela de comunidades mostra um aviso pedindo para aplicá-las, em vez de quebrar.
+## 4. O que a Home mostra (tudo real)
+- **Esquerda:** foto, nome, tipo (Estudante/Professor…), frase de status do perfil, indicadores clássicos (os mesmos do perfil — nenhum percentual NERD/PARCEIRO/TECH) e menu vertical: perfil, recados (→ `/scraps`), fotos e vídeos (→ abas do perfil), depoimentos (→ `/testimonials`), amigos (→ `/friends`), comunidades (→ `/communities`), com contadores.
+- **Centro:** saudação; atalhos (recados, depoimentos aguardando aprovação, solicitações de amizade pendentes — destacados em rosa quando há pendência —, comunidades, encontrar pessoas); solicitações de amizade pendentes (até 3); últimos 3 recados recebidos; e um aviso discreto de que as publicações dos amigos ainda não existem (nenhuma publicação fictícia).
+- **Direita:** os mesmos quadros do perfil — amigos (foto, nome, total, "ver todos") e comunidades (imagem, nome, total, "ver todas").
+- **Menu superior:** inalterado (início, perfil, amigos, comunidades, scraps, depoimentos). Login/redirecionamentos: inalterados.
+- **Celular:** colunas empilhadas (identidade → centro → conexões); o menu vira grade de 2–3 colunas; sem rolagem horizontal.
 
-## 5. Teste manual sugerido (use 2 contas, de preferência 3)
-1. Conta A: `/communities` → "criar comunidade" com nome, descrição, categoria, **imagem** e entrada **mediante aprovação** → abre a página da comunidade (A é criador e moderador).
-2. Conta B: busque a comunidade → "solicitar participação" → aparece "solicitação enviada". Teste "cancelar solicitação" e solicite de novo.
-3. Conta A: aba **administração** → aprovar B. B vira membro (participantes, contador). Teste também **recusar** com outra solicitação.
-4. A: em participantes, "tornar moderador" para B; B vê a aba administração, decide solicitações e remove participantes comuns, mas **não** edita dados nem remove outro moderador.
-5. A: editar nome/descrição/imagem/tipo de entrada (só o criador vê o formulário). Mudar para "aberta": quem não é membro passa a ver "entrar na comunidade".
-6. B sai da comunidade ("sair" com confirmação); o criador não vê o botão de sair.
-7. Conta C (não membro): não consegue postar na comunidade (o banco bloqueia) e não vê o painel de solicitações.
-8. Opcional: `supabase/tests/communities_smoke_test.sql` no SQL Editor de **desenvolvimento** (termina em ROLLBACK, não deixa dados) — deve terminar com `TODOS OS TESTES PASSARAM`.
+## 5. Checklist de testes manuais (conta A com amigos, comunidades, recados; conta B para pedir amizade/deixar recado)
+1. Login → cai em `/home` com 3 colunas no desktop; clicar em "início" no topo leva à mesma Home.
+2. Esquerda: foto, nome, tipo, status **igual** ao do perfil (edite o status no perfil e recarregue a Home); indicadores iguais aos do perfil, sem percentuais; sem status → link "escreva uma frase de status".
+3. Menu lateral: perfil; recados → `/scraps`; fotos/vídeos → perfil já na aba certa; depoimentos → `/testimonials`; amigos → `/friends`; comunidades → `/communities`. Contadores conferem.
+4. B envia solicitação de amizade a A → na Home de A: atalho e quadro "solicitações de amizade" com B; "aceitar ou recusar" abre `/friends`.
+5. B deixa um recado (precisa ser amigo) e um depoimento → Home de A: recado em "últimos recados"; depoimento pendente destaca o atalho e o menu ("N novos"). Aprovar o depoimento zera o destaque.
+6. Direita: amigos e comunidades reais, miniaturas e nomes clicáveis, "ver todos"/"ver todas". Conta sem amigos/comunidades mostra mensagens vazias com link.
+7. Não existe mais o quadro "novidades"; o aviso do feed é pequeno.
+8. Celular (≈390 px): nada sobreposto nem cortado; sem rolagem horizontal; menu acessível.
+9. Perfil, scraps/respostas, depoimentos, fotos, vídeos e comunidades continuam como antes; `?aba=fotos` no perfil abre a galeria.
 
-## 6. Decisões aplicadas
-- Só o **criador** edita dados e tipo de entrada. **Mudança de comportamento:** moderadores existentes perdem o direito de editar a comunidade (antes podiam). Moderadores gerenciam solicitações e removem participantes comuns.
-- Pedidos pendentes continuam pendentes se a comunidade passar para "aberta" (o painel avisa).
-- Quem saiu, foi removido, recusado ou cancelou pode solicitar/entrar de novo.
-- Postagens em comunidade exigem ser membro; posts antigos de não membros **foram preservados** (nada é apagado).
-- Imagem JPEG/PNG/WebP até 2 MB; sem imagem, usa emoji/cor. Sem notificações novas nesta entrega.
+## 6. Testes executados — e limites
+**Executado (ambiente local):**
+- Home no Chromium (Playwright, 45 verificações) com dados **simulados**: 3 colunas e larguras idênticas às do perfil (190/flex/250), empilhamento em 360/390/768 px sem rolagem horizontal, menu e destinos dos links, indicadores iguais aos do perfil, atalhos e pendências, recados com emoticon, autor desconhecido, estados vazios, aviso sem a migration 14, nome/status longos.
+- Perfil (103 verificações) e Comunidades no Chromium, lógica do perfil (60) e `parseInitialTab` — todos passando após as mudanças. Checagem de tipos TypeScript com stubs.
+- Não houve mudança de SQL nesta entrega (a regressão SQL da entrega 3 continua valendo).
 
-## 7. NÃO verificado / fora do escopo
-- `npm run build` e lint **não rodaram** (sem rede para instalar dependências aqui): só type-check com stubs.
-- Migrations e testes SQL rodaram em PostgreSQL 16 local com emulação do Supabase (sem Auth, PostgREST e Storage reais). A interface foi testada em Chromium com Supabase simulado e **sem Tailwind compilado** (o visual/layout real não foi avaliado). Nada foi testado no seu Supabase nem com contas reais.
-- Cenários com terceira conta (moderador/não amigo) dependem da validação manual do passo 5.
-- Não incluídos: exclusão de comunidade pela interface, fóruns, notificações de solicitação, comunidade sem criador (conta excluída → criador nulo).
+**NÃO verificado:** `npm run build`/lint do seu projeto; Supabase real (Auth, PostgREST, RLS via API) — as consultas novas da Home (últimos recados, depoimentos pendentes, solicitações) usam as mesmas tabelas/regras já existentes, mas rodaram aqui só com cliente simulado; CSS compilado com Tailwind v4 (aproximação do seu build).
+
+## 7. Fora desta entrega
+Feed de publicações dos amigos, fórum das comunidades (migrations 15+), documentação LaTeX.

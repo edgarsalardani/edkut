@@ -197,3 +197,46 @@ export interface SearchResults {
   communities: Community[];
   posts: Post[];
 }
+
+// ----------------------------- perfil clássico (migração 14) -----------------------------
+
+export type RelationshipKey = "solteiro" | "namorando" | "casado" | "uniao_estavel" | "relacionamento_aberto" | "complicado";
+
+/** Dados pessoais extras do perfil (colunas novas de profiles). Campos vazios ficam ausentes. */
+export interface ProfileExtras {
+  statusPhrase?: string;
+  relationship?: RelationshipKey;
+  /** AAAA-MM-DD. O app mostra só dia e mês. */
+  birthday?: string;
+  hobbies?: string;
+}
+
+export interface ProfilePhoto {
+  id: string;
+  ownerId: string;
+  /** Caminho no bucket profile-photos ("<dono>/<arquivo>"). */
+  path: string;
+  url: string;
+  caption: string;
+  createdAt: string;
+}
+
+export interface ProfileVideo {
+  id: string;
+  ownerId: string;
+  /** Só o id de 11 caracteres; miniatura e player são montados pelo app. */
+  youtubeId: string;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
+/** Comunidade em miniatura (coluna direita do perfil e lista "ver todas"). */
+export interface ProfileCommunity {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  imageUrl?: string;
+  memberCount: number;
+}

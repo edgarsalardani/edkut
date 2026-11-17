@@ -94,8 +94,8 @@ begin
   assert (select array_agg(column_name::text order by column_name) from information_schema.columns
            where table_schema = 'public' and table_name = 'profiles'
              and has_column_privilege('authenticated', 'public.profiles', column_name, 'UPDATE'))
-         = array['avatar_color','avatar_emoji','avatar_path','bio','course_or_area','headline','institution','interests','location','name','user_type','username'],
-    'o conjunto de colunas atualizáveis deveria ser: as 11 da migração 2 + avatar_path';
+         = array['avatar_color','avatar_emoji','avatar_path','bio','birthday','course_or_area','headline','hobbies','institution','interests','location','name','relationship','status_phrase','user_type','username'],
+    'o conjunto de colunas atualizáveis deveria ser: as 11 da migração 2 + avatar_path + as 4 da migração 14 (status_phrase, relationship, birthday, hobbies)';
   assert not has_table_privilege('authenticated', 'public.profiles', 'DELETE') and not has_table_privilege('authenticated', 'public.profiles', 'INSERT'),
     'sem INSERT/DELETE em profiles';
   raise notice 'OK: matriz de privilégios por coluna = 11 originais + avatar_path';

@@ -28,7 +28,7 @@ export interface ValidationResult {
 }
 
 /** Confere o tipo real do arquivo pelos primeiros bytes (não só pela extensão/MIME informado). */
-async function sniffImageType(file: File): Promise<string | null> {
+export async function sniffImageType(file: File): Promise<string | null> {
   const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const ascii = (from: number, to: number) => String.fromCharCode(...Array.from(head.slice(from, to)));
   if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return "image/jpeg";

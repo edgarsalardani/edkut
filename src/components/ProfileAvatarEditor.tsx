@@ -10,7 +10,7 @@ import { AVATAR_ACCEPT, saveAvatar, validateAvatarFile } from "@/lib/avatarUploa
  * Avatar grande do PRÓPRIO perfil com o fluxo: escolher imagem -> pré-visualizar -> salvar.
  * Só deve ser renderizado quando o perfil aberto é o do usuário autenticado.
  */
-export function ProfileAvatarEditor({ user }: { user: User }) {
+export function ProfileAvatarEditor({ user, size = "lg" }: { user: User; size?: "lg" | "xl" | "2xl" }) {
   const router = useRouter();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,9 +68,9 @@ export function ProfileAvatarEditor({ user }: { user: User }) {
   return (
     <div className="flex w-full flex-col items-center gap-1.5">
       {previewUrl ? (
-        <Avatar emoji={user.avatarEmoji} color={user.avatarColor} imageUrl={previewUrl} size="lg" />
+        <Avatar emoji={user.avatarEmoji} color={user.avatarColor} imageUrl={previewUrl} size={size} />
       ) : (
-        <UserAvatar user={user} size="lg" />
+        <UserAvatar user={user} size={size} />
       )}
 
       <input
